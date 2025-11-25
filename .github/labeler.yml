@@ -1,0 +1,16 @@
+feature:
+  - "frontend/**/*.ts*"
+  - "backend/**/*.ts"
+  - "ai/**"
+bugfix:
+  - "**/*.ts"
+frontend:
+  - "frontend/**"
+backend:
+  - "backend/**"
+ai:
+  - "ai/**"
+docs:
+  - "*.md"
+ci:
+  - ".github/workflows/**"
