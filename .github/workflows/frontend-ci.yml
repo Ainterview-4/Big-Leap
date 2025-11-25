@@ -2,27 +2,32 @@ name: Frontend CI
 
 on:
   pull_request:
+    branches:
+      - dev
     paths:
-      - "frontend/**"
+      - 'frontend/**'
 
 jobs:
-  build:
+  frontend-ci:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: frontend  #  IMPORTANT
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
-          cache: "npm"
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json  #  IMPORTANT
 
       - name: Install dependencies
-        working-directory: frontend
         run: npm install
 
-      - name: Build TypeScript
-        working-directory: frontend
-        run: npm run build
+      - name: Lint
+        run: npm run lint
