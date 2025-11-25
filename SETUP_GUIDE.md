@@ -170,3 +170,12 @@ This ensures you have all new modules your teammates added.
 Your backend & frontend are now fully configured.  
 If you have any issues, contact the Scrum Master.
 
+git checkout dev
+git pull
+git checkout -b feature/<task>
+code...
+git add .
+git commit -m "feat: ..."
+git push origin feature/<task>
+Create PR → dev
+Review → merge → delete branch
