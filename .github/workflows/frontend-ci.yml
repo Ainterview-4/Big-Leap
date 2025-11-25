@@ -4,25 +4,25 @@ on:
   pull_request:
     paths:
       - "frontend/**"
-      - ".github/workflows/frontend-ci.yml"
 
 jobs:
-  frontend-ci:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         working-directory: frontend
         run: npm install
 
-      - name: Build React app
+      - name: Build TypeScript
         working-directory: frontend
         run: npm run build
