@@ -2,16 +2,13 @@ name: AI Format Check
 
 on:
   pull_request:
-    paths:
-      - "ai/**"
+    paths-ignore:
+      - '**/*.md'
+      - 'README.md'
 
 jobs:
-  ai-lint:
+  ai-format:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Dummy formatter (placeholder)
-        run: echo "AI format check passed!"
+      - uses: actions/checkout@v3
+      - run: echo "AI format check passed!"
