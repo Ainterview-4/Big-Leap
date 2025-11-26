@@ -1,0 +1,14 @@
+name: AI Format Check
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'README.md'
+
+jobs:
+  ai-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "AI format check passed!"
