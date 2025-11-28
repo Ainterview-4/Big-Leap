@@ -1,0 +1,492 @@
+openapi: 3.0.0
+info:
+  title: Interview AI Platform API
+  version: 1.0.0
+  description: API documentation for the Interview AI MVP backend.
+
+servers:
+  - url: http://localhost:3000/api
+
+paths:
+
+  # ---------------------
+  # AUTH
+  # ---------------------
+
+  /auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+
+  /auth/login:
+    post:
+      summary: Login and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
+  /auth/forgot-password:
+    post:
+      summary: Request password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        "200":
+          description: Reset email triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseResponse"
+
+  /auth/reset-password:
+    post:
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordRequest"
+      responses:
+        "200":
+          description: Password successfully reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseResponse"
+
+  # ---------------------
+  # USER
+  # ---------------------
+
+  /user/profile:
+    get:
+      summary: Get user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+
+    patch:
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdateRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+
+  # ---------------------
+  # CV OPTIMIZATION
+  # ---------------------
+
+  /cv/optimize:
+    post:
+      summary: Optimize a CV based on job description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CVOptimizeRequest"
+      responses:
+        "200":
+          description: Optimized CV returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CVOptimizeResponse"
+
+  # ---------------------
+  # INTERVIEW
+  # ---------------------
+
+  /interview/start:
+    post:
+      summary: Start a new interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewStartRequest"
+      responses:
+        "201":
+          description: Interview started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewStartResponse"
+
+  /interview/answer:
+    post:
+      summary: Submit an answer and get next/follow-up question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewAnswerRequest"
+      responses:
+        "200":
+          description: Next question returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewAnswerResponse"
+
+  /interview/evaluate:
+    post:
+      summary: Evaluate completed interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewEvaluateRequest"
+      responses:
+        "200":
+          description: Evaluation returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewEvaluateResponse"
+
+  /interview/{session_id}:
+    get:
+      summary: Fetch summary of old interview session
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Interview session summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewSessionSummary"
+
+  # ---------------------
+  # SYSTEM / DEBUG
+  # ---------------------
+
+  /system/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Health information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemHealthResponse"
+
+  /system/rag-debug-query:
+    post:
+      summary: Test RAG retrieval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RAGDebugRequest"
+      responses:
+        "200":
+          description: RAG results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RAGDebugResponse"
+
+# -------------------------------------------------------
+# COMPONENT SCHEMAS
+# -------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+
+    # Base Response
+    BaseResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          nullable: true
+        error:
+          nullable: true
+
+    # AUTH SCHEMAS
+    RegisterRequest:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        full_name:
+          type: string
+
+    RegisterResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                email:
+                  type: string
+                full_name:
+                  type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                expires_in:
+                  type: integer
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+
+    ResetPasswordRequest:
+      type: object
+      required: [reset_token, new_password]
+      properties:
+        reset_token:
+          type: string
+        new_password:
+          type: string
+
+    # USER SCHEMAS
+    UserProfileResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user_id: { type: string }
+                email: { type: string }
+                full_name: { type: string }
+                avatar_url: { type: string }
+                bio: { type: string }
+                linkedin: { type: string }
+                github: { type: string }
+
+    UserProfileUpdateRequest:
+      type: object
+      properties:
+        full_name: { type: string }
+        avatar_url: { type: string }
+        bio: { type: string }
+        linkedin: { type: string }
+        github: { type: string }
+
+    # CV OPTIMIZATION
+    CVOptimizeRequest:
+      type: object
+      required: [cv_text, job_description]
+      properties:
+        cv_text: { type: string }
+        job_description: { type: string }
+
+    CVOptimizeResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                optimized_cv: { type: string }
+                missing_keywords:
+                  type: array
+                  items: { type: string }
+                suggestions:
+                  type: array
+                  items: { type: string }
+
+    # INTERVIEW SCHEMAS
+    InterviewStartRequest:
+      type: object
+      required: [cv_text, position]
+      properties:
+        cv_text: { type: string }
+        position: { type: string }
+
+    InterviewStartResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                session_id: { type: string }
+                first_question: { type: string }
+
+    InterviewAnswerRequest:
+      type: object
+      required: [session_id, answer]
+      properties:
+        session_id: { type: string }
+        answer: { type: string }
+
+    InterviewAnswerResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                next_question: { type: string }
+                is_followup: { type: boolean }
+                is_last: { type: boolean }
+
+    InterviewEvaluateRequest:
+      type: object
+      required: [session_id]
+      properties:
+        session_id: { type: string }
+
+    InterviewEvaluateResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                score: { type: number }
+                strengths:
+                  type: array
+                  items: { type: string }
+                weaknesses:
+                  type: array
+                  items: { type: string }
+                recommendations:
+                  type: array
+                  items: { type: string }
+
+    InterviewSessionSummary:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                session_id: { type: string }
+                position: { type: string }
+                status: { type: string }
+                started_at: { type: string }
+                ended_at: { type: string }
+                questions_count: { type: integer }
+
+    # SYSTEM
+    SystemHealthResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status: { type: string }
+                uptime_sec: { type: number }
+
+    RAGDebugRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string }
+
+    RAGDebugResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                retrieved_count: { type: number }
+                results:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text: { type: string }
+                      distance: { type: number }
