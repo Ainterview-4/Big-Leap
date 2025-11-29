@@ -1,0 +1,30 @@
+name: Feature Request
+description: New feature or user story
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the feature
+      placeholder: "User should be able to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] Criteria 1
+        - [ ] Criteria 2
+        - [ ] Criteria 3
+    validations:
+      required: true
+
+  - type: input
+    id: assignee
+    attributes:
+      label: Assignee
+      placeholder: "frontend / backend / ai / devops"
