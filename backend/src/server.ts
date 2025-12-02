@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 
@@ -10,14 +11,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Load OpenAPI (swagger) file
-const openapiPath = path.resolve(__dirname, "../docs/openapi.yaml");
+// Absolute path for OpenAPI file (fix for macOS)
+const openapiPath = path.join(__dirname, "..", "docs", "openapi.yaml");
+
+if (!fs.existsSync(openapiPath)) {
+  console.error("❌ ERROR: openapi.yaml not found at:", openapiPath);
+} else {
+  console.log("✔ Swagger file loaded from:", openapiPath);
+}
+
 const swaggerDocument = YAML.load(openapiPath);
 
 // Swagger UI Route
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-  explorer: true,
-}));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, { explorer: true })
+);
 
 // Root Endpoint
 app.get("/", (req, res) => {
@@ -28,7 +38,5 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📘 Swagger UI available at http://localhost:${PORT}/api-docs`);
+  console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
 });
-
-
