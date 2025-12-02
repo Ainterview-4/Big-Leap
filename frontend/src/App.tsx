@@ -1,12 +1,8 @@
-import { Button } from "@mui/material";
+import React from "react";
+import AppRouter from "./AppRouter";
 
-function App() {
-  return (
-    <div style={{ padding: 32 }}>
-      <h1>Frontend is running with React + TypeScript + MUI</h1>
-      <Button variant="contained">Test Button</Button>
-    </div>
-  );
-}
+const App: React.FC = () => {
+  return <AppRouter />;
+};
 
 export default App;
