@@ -8,6 +8,7 @@ import {
   Button,
   Alert,
 } from "@mui/material";
+import { AxiosError } from "axios";
 
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -58,9 +59,10 @@ const Login: React.FC = () => {
       } else {
         setServerError("Giriş başarısız. Tekrar deneyin.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const axiosError = err as AxiosError<{ message: string }>;
       const message =
-        err?.response?.data?.message ||
+        axiosError?.response?.data?.message ||
         "Giriş yapılamadı. Bilgilerinizi kontrol edin.";
       setServerError(message);
     } finally {
