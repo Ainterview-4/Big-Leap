@@ -25,19 +25,19 @@ type FormValues = {
 };
 
 const schema = yup.object({
-  name: yup.string().required("İsim gerekli"),
+  name: yup.string().required("Name is required"),
   email: yup
     .string()
-    .email("Geçerli bir email girin")
-    .required("Email gerekli"),
+    .email("Enter a valid email")
+    .required("Email is required"),
   password: yup
     .string()
-    .min(6, "Şifre en az 6 karakter olmalı")
-    .required("Şifre gerekli"),
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
   confirmPassword: yup
     .string()
-    .oneOf([yup.ref("password")], "Şifreler uyuşmuyor")
-    .required("Şifre tekrarı gerekli"),
+    .oneOf([yup.ref("password")], "Passwords do not match")
+    .required("Confirm Password is required"),
 });
 
 const Register: React.FC = () => {
@@ -70,7 +70,7 @@ const Register: React.FC = () => {
       const axiosError = err as AxiosError<{ message: string }>;
       const message =
         axiosError?.response?.data?.message ||
-        "Kayıt yapılamadı. Bilgilerinizi kontrol edin.";
+        "Registration failed. Please check your information.";
       setServerError(message);
     } finally {
       setLoading(false);
@@ -81,7 +81,7 @@ const Register: React.FC = () => {
     <Container maxWidth="sm" sx={{ mt: 6 }}>
       <Paper sx={{ p: 4 }}>
         <Typography variant="h5" mb={2}>
-          Kayıt Ol
+          Register
         </Typography>
 
         {serverError && (
@@ -93,7 +93,7 @@ const Register: React.FC = () => {
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
           <TextField
             fullWidth
-            label="İsim"
+            label="Name"
             margin="normal"
             {...register("name")}
             error={!!errors.name}
@@ -111,7 +111,7 @@ const Register: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Şifre"
+            label="Password"
             type="password"
             margin="normal"
             {...register("password")}
@@ -121,7 +121,7 @@ const Register: React.FC = () => {
 
           <TextField
             fullWidth
-            label="Şifre Tekrar"
+            label="Confirm Password"
             type="password"
             margin="normal"
             {...register("confirmPassword")}
@@ -136,7 +136,7 @@ const Register: React.FC = () => {
             sx={{ mt: 2 }}
             disabled={loading}
           >
-            {loading ? "Kayıt yapılıyor..." : "Kayıt Ol"}
+            {loading ? "Registering..." : "Register"}
           </Button>
 
           <Button
@@ -145,7 +145,7 @@ const Register: React.FC = () => {
             variant="text"
             onClick={() => navigate("/auth/login")}
           >
-            Zaten hesabın var mı? Giriş Yap
+            Already have an account? Login
           </Button>
         </Box>
       </Paper>

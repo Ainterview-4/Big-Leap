@@ -27,9 +27,9 @@ type FormValues = {
 const schema = yup.object({
   email: yup
     .string()
-    .email("Geçerli bir email girin")
-    .required("Email gerekli"),
-  password: yup.string().required("Şifre gerekli"),
+    .email("Enter a valid email")
+    .required("Email is required"),
+  password: yup.string().required("Password is required"),
 });
 
 const Login: React.FC = () => {
@@ -57,13 +57,13 @@ const Login: React.FC = () => {
         localStorage.setItem("token", response.data.token);
         navigate("/cv/upload");
       } else {
-        setServerError("Giriş başarısız. Tekrar deneyin.");
+        setServerError("Login failed. Please try again.");
       }
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ message: string }>;
       const message =
         axiosError?.response?.data?.message ||
-        "Giriş yapılamadı. Bilgilerinizi kontrol edin.";
+        "Login failed. Please check your credentials.";
       setServerError(message);
     } finally {
       setLoading(false);
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
     <Container maxWidth="sm" sx={{ mt: 6 }}>
       <Paper sx={{ p: 4 }}>
         <Typography variant="h5" mb={2}>
-          Giriş Yap
+          Login
         </Typography>
 
         {serverError && (
@@ -97,7 +97,7 @@ const Login: React.FC = () => {
           {/* Password */}
           <TextField
             fullWidth
-            label="Şifre"
+            label="Password"
             type="password"
             margin="normal"
             {...register("password")}
@@ -113,7 +113,7 @@ const Login: React.FC = () => {
             sx={{ mt: 2 }}
             disabled={loading}
           >
-            {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+            {loading ? "Logging in..." : "Login"}
           </Button>
 
           {/* Şifremi Unuttum */}
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
             variant="text"
             onClick={() => navigate("/auth/reset-password")}
           >
-            Şifremi Unuttum
+            Forgot Password?
           </Button>
 
           {/* Kayıt Ol */}
@@ -133,7 +133,7 @@ const Login: React.FC = () => {
             variant="text"
             onClick={() => navigate("/auth/register")}
           >
-            Hesabın yok mu? Kayıt Ol
+            Don't have an account? Register
           </Button>
         </Box>
       </Paper>

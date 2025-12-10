@@ -27,3 +27,11 @@ export interface LoginResponse {
 export const loginRequest = (payload: LoginPayload) => {
   return api.post<LoginResponse>("/auth/login", payload);
 };
+
+export interface ResetPasswordPayload {
+  email: string;
+}
+
+export const resetPasswordRequest = (payload: ResetPasswordPayload) => {
+  return api.post<{ message: string }>("/auth/reset-password", payload);
+};
