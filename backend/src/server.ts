@@ -8,7 +8,10 @@ import YAML from "yamljs";
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 app.use(express.json());
 
 // Absolute path for OpenAPI file (fix for macOS)
@@ -28,6 +31,10 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, { explorer: true })
 );
+
+// Auth Routes
+import authRoutes from "./routes/auth";
+app.use("/auth", authRoutes);
 
 // Root Endpoint
 app.get("/", (req, res) => {
