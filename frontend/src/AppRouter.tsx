@@ -10,9 +10,11 @@ import CVUpload from "./pages/CV/CVUpload";
 import CVResult from "./pages/CV/CVResult";
 import CVOptimize from "./pages/CV/CVOptimize";
 
+import Dashboard from "./pages/Dashboard";
 import InterviewStart from "./pages/Interview/InterviewStart";
 import InterviewQnA from "./pages/Interview/InterviewQnA";
 import InterviewResults from "./pages/Interview/InterviewResults";
+import MainLayout from "./components/layout/MainLayout";
 
 // ---- PRIVATE ROUTE ---- //
 interface PrivateRouteProps {
@@ -36,66 +38,30 @@ const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* AUTH */}
+        {/* AUTH ROUTES (No Sidebar/Navbar) */}
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/register" element={<Register />} />
         <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-        {/* CV MODULE */}
+        {/* PROTECTED ROUTES (With Layout) */}
         <Route
-          path="/cv/upload"
           element={
             <PrivateRoute>
-              <CVUpload />
+              <MainLayout />
             </PrivateRoute>
           }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* CV */}
+          <Route path="/cv/upload" element={<CVUpload />} />
+          <Route path="/cv/result" element={<CVResult />} />
+          <Route path="/cv/optimize" element={<CVOptimize />} />
 
-        <Route
-          path="/cv/result"
-          element={
-            <PrivateRoute>
-              <CVResult />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/cv/optimize"
-          element={
-            <PrivateRoute>
-              <CVOptimize />
-            </PrivateRoute>
-          }
-        />
-
-        {/* INTERVIEW MODULE */}
-        <Route
-          path="/interview/start"
-          element={
-            <PrivateRoute>
-              <InterviewStart />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/interview/qna"
-          element={
-            <PrivateRoute>
-              <InterviewQnA />
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/interview/results"
-          element={
-            <PrivateRoute>
-              <InterviewResults />
-            </PrivateRoute>
-          }
-        />
+          {/* INTERVIEW */}
+          <Route path="/interview/start" element={<InterviewStart />} />
+          <Route path="/interview/qna" element={<InterviewQnA />} />
+          <Route path="/interview/results" element={<InterviewResults />} />
+        </Route>
 
         {/* DEFAULT ROUTES */}
         <Route path="/" element={<Navigate to="/auth/login" replace />} />
