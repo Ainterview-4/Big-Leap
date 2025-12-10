@@ -59,12 +59,12 @@ const CVUpload: React.FC = () => {
             await uploadCVRequest(file);
 
             setSuccess(true);
-            // Optional: Navigate to result page or show success for a moment
+            // Navigate to result page
             setTimeout(() => {
                 navigate("/cv/result", { state: { filename: file.name } });
             }, 1000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             setError("Failed to upload CV. Please try again.");
         } finally {

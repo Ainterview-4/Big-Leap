@@ -5,8 +5,10 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ResetPassword from "./pages/Auth/ResetPassword";
 
+// CV Modules
 import CVUpload from "./pages/CV/CVUpload";
 import CVResult from "./pages/CV/CVResult";
+import CVOptimize from "./pages/CV/CVOptimize";
 
 import InterviewStart from "./pages/Interview/InterviewStart";
 import InterviewQnA from "./pages/Interview/InterviewQnA";
@@ -54,6 +56,15 @@ const AppRouter: React.FC = () => {
           element={
             <PrivateRoute>
               <CVResult />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/cv/optimize"
+          element={
+            <PrivateRoute>
+              <CVOptimize />
             </PrivateRoute>
           }
         />

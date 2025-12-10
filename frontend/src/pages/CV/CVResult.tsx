@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
@@ -96,6 +97,24 @@ const CVResult: React.FC = () => {
           <Button
             variant="contained"
             size="large"
+            endIcon={<AutoFixHighIcon />}
+            onClick={() => navigate("/cv/optimize")}
+            sx={{
+              px: 5,
+              py: 1.5,
+              borderRadius: 2,
+              fontSize: "1.1rem",
+              textTransform: "none",
+              mr: 2,
+              background: "linear-gradient(45deg, #FF9800 30%, #FFB74D 90%)",
+            }}
+          >
+            Optimize CV with AI
+          </Button>
+
+          <Button
+            variant="outlined"
+            size="large"
             endIcon={<ArrowForwardIcon />}
             onClick={() => navigate("/interview/start")}
             sx={{
@@ -106,7 +125,7 @@ const CVResult: React.FC = () => {
               textTransform: "none",
             }}
           >
-            Start Interview Preparation
+            Skip to Interview
           </Button>
         </Box>
       </Paper>
