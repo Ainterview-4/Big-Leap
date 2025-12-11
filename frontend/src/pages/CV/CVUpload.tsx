@@ -6,13 +6,13 @@ import {
     Box,
     Button,
     CircularProgress,
-    Alert,
     Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { uploadCVRequest } from "../../api/cv";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const CVUpload: React.FC = () => {
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ const CVUpload: React.FC = () => {
 
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // const [error, setError] = useState<string | null>(null); // Removed in favor of toast
     const [success, setSuccess] = useState(false);
 
     // Handle file selection
@@ -30,13 +30,13 @@ const CVUpload: React.FC = () => {
 
             // Validate PDF
             if (selectedFile.type !== "application/pdf") {
-                setError("Please upload a valid PDF file.");
+                toast.error("Please upload a valid PDF file.");
                 setFile(null);
                 return;
             }
 
             setFile(selectedFile);
-            setError(null);
+            // setError(null);
             setSuccess(false);
         }
     };
@@ -54,10 +54,11 @@ const CVUpload: React.FC = () => {
 
         try {
             setLoading(true);
-            setError(null);
+            // setError(null);
 
             await uploadCVRequest(file);
 
+            toast.success("CV Uploaded Successfully!");
             setSuccess(true);
             // Navigate to result page
             setTimeout(() => {
@@ -66,7 +67,7 @@ const CVUpload: React.FC = () => {
 
         } catch (err: unknown) {
             console.error(err);
-            setError("Failed to upload CV. Please try again.");
+            toast.error("Failed to upload CV. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -90,11 +91,7 @@ const CVUpload: React.FC = () => {
                     To start your AI interview preparation, please upload your resume (PDF only).
                 </Typography>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                        {error}
-                    </Alert>
-                )}
+                {/* Error Alert Removed */}
 
                 {/* Upload Area */}
                 <Box
