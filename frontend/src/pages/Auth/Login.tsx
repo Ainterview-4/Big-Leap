@@ -55,7 +55,7 @@ const Login: React.FC = () => {
 
       if (response.data?.token) {
         localStorage.setItem("token", response.data.token);
-        navigate("/cv/upload");
+        navigate("/dashboard");
       } else {
         setServerError("Login failed. Please try again.");
       }
