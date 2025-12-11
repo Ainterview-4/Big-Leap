@@ -1,6 +1,16 @@
 import React from "react";
-import { AppBar, Toolbar, Typography, Box, Container, Button, IconButton, useTheme } from "@mui/material";
+import {
+    AppBar,
+    Toolbar,
+    Typography,
+    Box,
+    Container,
+    Button,
+    IconButton,
+    useTheme,
+} from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -16,6 +26,7 @@ const Navbar: React.FC = () => {
     };
 
     const isActive = (path: string) => location.pathname.startsWith(path);
+    const showBackButton = location.pathname !== "/dashboard";
 
     return (
         <AppBar
@@ -26,13 +37,36 @@ const Navbar: React.FC = () => {
                 backdropFilter: "blur(12px)",
                 borderBottom: "1px solid",
                 borderColor: "divider",
-                color: "text.primary"
+                color: "text.primary",
             }}
         >
             <Container maxWidth="lg">
                 <Toolbar disableGutters sx={{ height: 70 }}>
+                    {/* Back Button */}
+                    {showBackButton && (
+                        <IconButton
+                            onClick={() => navigate(-1)}
+                            color="default"
+                            sx={{
+                                mr: 2,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                p: 1,
+                                "&:hover": { bgcolor: "action.hover" },
+                            }}
+                        >
+                            <ArrowBackIcon fontSize="small" />
+                        </IconButton>
+                    )}
+
                     {/* Logo / Brand */}
-                    <Box display="flex" alignItems="center" sx={{ flexGrow: 1, cursor: "pointer" }} onClick={() => navigate("/dashboard")}>
+                    <Box
+                        display="flex"
+                        alignItems="center"
+                        sx={{ flexGrow: 1, cursor: "pointer" }}
+                        onClick={() => navigate("/dashboard")}
+                    >
                         <Box
                             sx={{
                                 width: 32,
@@ -44,7 +78,7 @@ const Navbar: React.FC = () => {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 color: "white",
-                                fontWeight: "bold"
+                                fontWeight: "bold",
                             }}
                         >
                             BL
@@ -77,7 +111,7 @@ const Navbar: React.FC = () => {
                                 textTransform: "none",
                                 px: 2,
                                 borderRadius: 2,
-                                "&:hover": { bgcolor: "action.hover" }
+                                "&:hover": { bgcolor: "action.hover" },
                             }}
                         >
                             CV & Resume
@@ -87,12 +121,14 @@ const Navbar: React.FC = () => {
                             onClick={() => navigate("/interview/start")}
                             sx={{
                                 color: isActive("/interview") ? "primary.main" : "text.secondary",
-                                bgcolor: isActive("/interview") ? "primary.lighter" : "transparent",
+                                bgcolor: isActive("/interview")
+                                    ? "primary.lighter"
+                                    : "transparent",
                                 fontWeight: isActive("/interview") ? 700 : 500,
                                 textTransform: "none",
                                 px: 2,
                                 borderRadius: 2,
-                                "&:hover": { bgcolor: "action.hover" }
+                                "&:hover": { bgcolor: "action.hover" },
                             }}
                         >
                             Interview Prep
@@ -107,7 +143,7 @@ const Navbar: React.FC = () => {
                             border: "1px solid",
                             borderColor: "divider",
                             borderRadius: 2,
-                            p: 1
+                            p: 1,
                         }}
                     >
                         <ExitToAppIcon fontSize="small" />
