@@ -11,6 +11,8 @@ import {
   Stack,
   Card,
   CardContent,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
@@ -57,6 +59,7 @@ const ScoreCircle: React.FC<{ score: number }> = ({ score }) => (
 const CVResult: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const filename = location.state?.filename || "Uploaded Resume";
 
   // MOCK DATA - Replace with actual API response later
@@ -74,9 +77,11 @@ const CVResult: React.FC = () => {
         sx={{
           p: { xs: 3, md: 5 },
           borderRadius: 4,
-          background: "linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)",
+          background: "rgba(255, 255, 255, 0.7)",
+          backdropFilter: "blur(20px)",
           border: "1px solid",
           borderColor: "divider",
+          boxShadow: `0 20px 40px -10px ${alpha(theme.palette.primary.main, 0.05)}`,
         }}
       >
         {/* Header Section */}
@@ -93,7 +98,15 @@ const CVResult: React.FC = () => {
         <Grid container spacing={4}>
           {/* LEFT COLUMN: Score & Summary */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <Card variant="outlined" sx={{ height: "100%", borderRadius: 3 }}>
+            <Card
+              variant="outlined"
+              sx={{
+                height: "100%",
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: alpha(theme.palette.divider, 0.6)
+              }}
+            >
               <CardContent sx={{ textAlign: "center", py: 4 }}>
                 <Typography variant="h6" gutterBottom fontWeight="bold">
                   ATS Score
@@ -184,7 +197,6 @@ const CVResult: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-
             startIcon={<AutoFixHighIcon />}
             onClick={() => navigate("/cv/optimize")}
             sx={{
@@ -193,8 +205,8 @@ const CVResult: React.FC = () => {
               fontSize: "1.1rem",
               borderRadius: 3,
               fontWeight: "bold",
-              background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
-              boxShadow: "0 4px 14px 0 rgba(33, 203, 243, .3)",
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              boxShadow: `0 8px 20px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
             }}
           >
             Optimize My CV

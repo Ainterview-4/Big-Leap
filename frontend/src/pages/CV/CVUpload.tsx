@@ -6,13 +6,12 @@ import {
     Box,
     Button,
     CircularProgress,
-    Alert,
-    Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { uploadCVRequest } from "../../api/cv";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const CVUpload: React.FC = () => {
     const navigate = useNavigate();
@@ -20,8 +19,7 @@ const CVUpload: React.FC = () => {
 
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
+    const [successState, setSuccessState] = useState(false); // Renamed to avoid conficts if any
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,14 +28,13 @@ const CVUpload: React.FC = () => {
 
             // Validate PDF
             if (selectedFile.type !== "application/pdf") {
-                setError("Please upload a valid PDF file.");
+                toast.error("Please upload a valid PDF file.");
                 setFile(null);
                 return;
             }
 
             setFile(selectedFile);
-            setError(null);
-            setSuccess(false);
+            setSuccessState(false);
         }
     };
 
@@ -54,19 +51,20 @@ const CVUpload: React.FC = () => {
 
         try {
             setLoading(true);
-            setError(null);
 
             await uploadCVRequest(file);
 
-            setSuccess(true);
+            toast.success("CV Uploaded Successfully! Analyzing...");
+            setSuccessState(true);
+
             // Navigate to result page
             setTimeout(() => {
                 navigate("/cv/result", { state: { filename: file.name } });
-            }, 1000);
+            }, 1500);
 
         } catch (err: unknown) {
             console.error(err);
-            setError("Failed to upload CV. Please try again.");
+            toast.error("Failed to upload CV. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -89,12 +87,6 @@ const CVUpload: React.FC = () => {
                 <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4 }}>
                     To start your AI interview preparation, please upload your resume (PDF only).
                 </Typography>
-
-                {error && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                        {error}
-                    </Alert>
-                )}
 
                 {/* Upload Area */}
                 <Box
@@ -129,15 +121,13 @@ const CVUpload: React.FC = () => {
 
                     {loading ? (
                         <CircularProgress size={60} thickness={4} />
-                    ) : success ? (
-                        <Fade in>
-                            <Box textAlign="center">
-                                <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-                                <Typography variant="h5" color="success.main">
-                                    Upload Successful!
-                                </Typography>
-                            </Box>
-                        </Fade>
+                    ) : successState ? (
+                        <Box textAlign="center">
+                            <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
+                            <Typography variant="h5" color="success.main">
+                                Upload Successful!
+                            </Typography>
+                        </Box>
                     ) : (
                         <>
                             <CloudUploadIcon
@@ -158,7 +148,7 @@ const CVUpload: React.FC = () => {
 
                 {/* Action Buttons */}
                 <Box sx={{ mt: 4, display: "flex", justifyContent: "center", gap: 2 }}>
-                    {file && !success && (
+                    {file && !successState && (
                         <Button
                             variant="contained"
                             size="large"

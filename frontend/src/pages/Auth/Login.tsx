@@ -16,6 +16,9 @@ import * as yup from "yup";
 
 import { loginRequest } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
+import GoogleIcon from "@mui/icons-material/Google";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import { Divider } from "@mui/material";
 
 // --- Form tipi ---
 type FormValues = {
@@ -61,9 +64,17 @@ const Login: React.FC = () => {
       }
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ message: string }>;
-      const message =
+      let message =
         axiosError?.response?.data?.message ||
         "Login failed. Please check your credentials.";
+
+      // Frontend translation for backend Turkish errors
+      if (message === "Geçersiz email veya şifre") {
+        message = "Invalid email or password";
+      } else if (message === "Email ve şifre gerekli") {
+        message = "Email and password are required";
+      }
+
       setServerError(message);
     } finally {
       setLoading(false);
@@ -105,6 +116,7 @@ const Login: React.FC = () => {
             helperText={errors.password?.message}
           />
 
+
           {/* Giriş Yap Butonu */}
           <Button
             type="submit"
@@ -116,10 +128,43 @@ const Login: React.FC = () => {
             {loading ? "Logging in..." : "Login"}
           </Button>
 
+          <Divider sx={{ my: 3, color: "text.secondary" }}>OR</Divider>
+
+          <Box display="flex" flexDirection="column" gap={2}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={() => console.log("Google Login clicked")}
+              sx={{
+                textTransform: "none",
+                borderColor: "divider",
+                color: "text.primary",
+                "&:hover": { bgcolor: "action.hover", borderColor: "text.primary" }
+              }}
+            >
+              Login with Google
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GitHubIcon />}
+              onClick={() => console.log("GitHub Login clicked")}
+              sx={{
+                textTransform: "none",
+                borderColor: "divider",
+                color: "text.primary",
+                "&:hover": { bgcolor: "action.hover", borderColor: "text.primary" }
+              }}
+            >
+              Login with GitHub
+            </Button>
+          </Box>
+
           {/* Şifremi Unuttum */}
           <Button
             fullWidth
-            sx={{ mt: 1 }}
+            sx={{ mt: 3 }}
             variant="text"
             onClick={() => navigate("/auth/reset-password")}
           >
