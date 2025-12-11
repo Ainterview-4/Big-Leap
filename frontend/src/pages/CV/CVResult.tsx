@@ -184,7 +184,7 @@ const CVResult: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            /* @ts-ignore */
+
             startIcon={<AutoFixHighIcon />}
             onClick={() => navigate("/cv/optimize")}
             sx={{
