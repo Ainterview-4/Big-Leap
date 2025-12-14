@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import InterviewStart from "./pages/Interview/InterviewStart";
 import InterviewQnA from "./pages/Interview/InterviewQnA";
 import InterviewResults from "./pages/Interview/InterviewResults";
+import Profile from "./pages/Settings/Profile";
 import MainLayout from "./components/layout/MainLayout";
 
 // ---- PRIVATE ROUTE ---- //
@@ -61,6 +62,9 @@ const AppRouter: React.FC = () => {
           <Route path="/interview/start" element={<InterviewStart />} />
           <Route path="/interview/qna" element={<InterviewQnA />} />
           <Route path="/interview/results" element={<InterviewResults />} />
+
+          {/* SETTINGS */}
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* DEFAULT ROUTES */}

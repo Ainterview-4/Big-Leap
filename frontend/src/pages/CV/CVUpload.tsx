@@ -6,7 +6,6 @@ import {
     Box,
     Button,
     CircularProgress,
-    Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -21,7 +20,7 @@ const CVUpload: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     // const [error, setError] = useState<string | null>(null); // Removed in favor of toast
-    const [success, setSuccess] = useState(false);
+    const [successState, setSuccessState] = useState(false);
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +36,7 @@ const CVUpload: React.FC = () => {
 
             setFile(selectedFile);
             // setError(null);
-            setSuccess(false);
+            setSuccessState(false);
         }
     };
 
@@ -59,11 +58,11 @@ const CVUpload: React.FC = () => {
             await uploadCVRequest(file);
 
             toast.success("CV Uploaded Successfully!");
-            setSuccess(true);
+            setSuccessState(true);
             // Navigate to result page
             setTimeout(() => {
                 navigate("/cv/result", { state: { filename: file.name } });
-            }, 1000);
+            }, 1500);
 
         } catch (err: unknown) {
             console.error(err);
@@ -126,15 +125,13 @@ const CVUpload: React.FC = () => {
 
                     {loading ? (
                         <CircularProgress size={60} thickness={4} />
-                    ) : success ? (
-                        <Fade in>
-                            <Box textAlign="center">
-                                <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-                                <Typography variant="h5" color="success.main">
-                                    Upload Successful!
-                                </Typography>
-                            </Box>
-                        </Fade>
+                    ) : successState ? (
+                        <Box textAlign="center">
+                            <CheckCircleIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
+                            <Typography variant="h5" color="success.main">
+                                Upload Successful!
+                            </Typography>
+                        </Box>
                     ) : (
                         <>
                             <CloudUploadIcon
@@ -155,7 +152,7 @@ const CVUpload: React.FC = () => {
 
                 {/* Action Buttons */}
                 <Box sx={{ mt: 4, display: "flex", justifyContent: "center", gap: 2 }}>
-                    {file && !success && (
+                    {file && !successState && (
                         <Button
                             variant="contained"
                             size="large"
