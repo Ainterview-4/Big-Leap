@@ -1,13 +1,13 @@
-import { createTheme } from "@mui/material/styles";
+import { type ThemeOptions } from "@mui/material/styles";
+import type { PaletteMode } from "@mui/material";
 
 // Modern AI-inspired Color Palette
 // Primary: Deep Indigo/Violet (Confidence, Intelligence)
 // Secondary: Electric Cyan/Blue (Tech, Future)
-// Background: Clean Soft White/Gray for reduced eye strain
 
-const theme = createTheme({
+export const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
   palette: {
-    mode: "light", // Keeping light mode for now, but prepping for dark
+    mode,
     primary: {
       main: "#6366f1", // Indigo 500
       light: "#818cf8",
@@ -20,14 +20,29 @@ const theme = createTheme({
       dark: "#0284c7",
       contrastText: "#ffffff",
     },
-    background: {
-      default: "#f8fafc", // Slate 50
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#1e293b", // Slate 800
-      secondary: "#64748b", // Slate 500
-    },
+    ...(mode === "light"
+      ? {
+        // Light Mode
+        background: {
+          default: "#f8fafc", // Slate 50
+          paper: "#ffffff",
+        },
+        text: {
+          primary: "#1e293b", // Slate 800
+          secondary: "#64748b", // Slate 500
+        },
+      }
+      : {
+        // Dark Mode
+        background: {
+          default: "#0f172a", // Slate 900
+          paper: "#1e293b", // Slate 800
+        },
+        text: {
+          primary: "#f1f5f9", // Slate 100
+          secondary: "#94a3b8", // Slate 400
+        },
+      }),
     success: {
       main: "#10b981", // Emerald 500
     },
@@ -56,9 +71,9 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: "linear-gradient(135deg, #EFF6FF 0%, #FAFAFA 100%)", // Very subtle blue-ish white
-          // Alternative option if this is too plain: 
-          // background: "radial-gradient(circle at 50% -20%, #e0e7ff 0%, #fafafa 60%)",
+          background: mode === "light"
+            ? "linear-gradient(135deg, #EFF6FF 0%, #FAFAFA 100%)"
+            : "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)", // Deep dark blue gradient
           backgroundAttachment: "fixed",
           minHeight: "100vh",
         },
@@ -90,10 +105,14 @@ const theme = createTheme({
           backgroundImage: "none", // Reset overlay
         },
         elevation1: {
-          boxShadow: "0px 2px 4px -1px rgba(0,0,0,0.05), 0px 4px 6px -1px rgba(0,0,0,0.05)",
+          boxShadow: mode === 'light'
+            ? "0px 2px 4px -1px rgba(0,0,0,0.05), 0px 4px 6px -1px rgba(0,0,0,0.05)"
+            : "0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 6px -1px rgba(0,0,0,0.3)",
         },
         elevation3: {
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          boxShadow: mode === 'light'
+            ? "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)"
+            : "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2)",
         },
       },
     },
@@ -102,7 +121,7 @@ const theme = createTheme({
         root: {
           borderRadius: "16px",
           border: "1px solid",
-          borderColor: "#e2e8f0", // Slate 200
+          borderColor: mode === 'light' ? "#e2e8f0" : "#334155", // Slate 200 or Slate 700
           boxShadow: "0px 4px 6px -1px rgba(0,0,0,0.05)",
         }
       }
@@ -124,4 +143,4 @@ const theme = createTheme({
   },
 });
 
-export default theme;
+export default getDesignTokens;

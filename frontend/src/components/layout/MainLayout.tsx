@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 const MainLayout: React.FC = () => {
     return (
@@ -10,6 +11,7 @@ const MainLayout: React.FC = () => {
             <Box component="main" sx={{ flexGrow: 1, py: 4 }}>
                 <Outlet />
             </Box>
+            <Footer />
         </Box>
     );
 };

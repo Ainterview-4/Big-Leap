@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     AppBar,
     Toolbar,
@@ -8,19 +8,42 @@ import {
     IconButton,
     useTheme,
     alpha,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    Avatar,
+    Divider
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const Navbar: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
 
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+
+    const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleProfileClick = () => {
+        handleMenuClose();
+        navigate("/profile");
+    };
+
     const handleLogout = () => {
+        handleMenuClose();
         localStorage.removeItem("token");
         navigate("/auth/login");
     };
@@ -33,10 +56,10 @@ const Navbar: React.FC = () => {
             position="sticky"
             elevation={0}
             sx={{
-                bgcolor: alpha("#ffffff", 0.7), // More transparent for better glass effect
+                bgcolor: alpha(theme.palette.background.paper, 0.7), // Adaptive background
                 backdropFilter: "blur(20px)",
                 borderBottom: "1px solid",
-                borderColor: "rgba(0,0,0,0.06)", // Softer border
+                borderColor: "divider",
                 color: "text.primary",
                 transition: "all 0.3s ease",
             }}
@@ -53,7 +76,7 @@ const Navbar: React.FC = () => {
                             borderColor: "divider",
                             borderRadius: 3, // Softer rounding
                             p: 1,
-                            backgroundColor: "rgba(255,255,255,0.5)",
+                            backgroundColor: alpha(theme.palette.background.paper, 0.5),
                             transition: "all 0.2s",
                             "&:hover": {
                                 bgcolor: theme.palette.primary.main,
@@ -152,27 +175,88 @@ const Navbar: React.FC = () => {
                     </Button>
                 </Box>
 
-                {/* Logout Button */}
-                <IconButton
-                    onClick={handleLogout}
-                    color="default"
-                    sx={{
-                        border: "1px solid",
-                        borderColor: "divider",
-                        borderRadius: 3,
-                        p: 1,
-                        backgroundColor: "rgba(255,255,255,0.5)",
-                        transition: "all 0.2s",
-                        "&:hover": {
-                            bgcolor: theme.palette.error.main,
-                            color: "white",
-                            borderColor: theme.palette.error.main,
-                            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)"
-                        }
+                {/* User Menu */}
+                <Box>
+                    <IconButton
+                        onClick={handleMenuClick}
+                        size="small"
+                        sx={{
+                            ml: 0.5,
+                            border: "2px solid",
+                            borderColor: open ? "primary.main" : "transparent",
+                            transition: "all 0.2s",
+                        }}
+                        aria-controls={open ? 'account-menu' : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? 'true' : undefined}
+                    >
+                        <Avatar
+                            sx={{
+                                width: 40,
+                                height: 40,
+                                bgcolor: theme.palette.secondary.main,
+                                fontSize: "1rem",
+                                fontWeight: "bold"
+                            }}
+                        >
+                            TU
+                        </Avatar>
+                    </IconButton>
+                </Box>
+
+                <Menu
+                    anchorEl={anchorEl}
+                    id="account-menu"
+                    open={open}
+                    onClose={handleMenuClose}
+                    onClick={handleMenuClose}
+                    PaperProps={{
+                        elevation: 0,
+                        sx: {
+                            overflow: 'visible',
+                            filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.1))',
+                            mt: 1.5,
+                            borderRadius: '16px',
+                            minWidth: 180,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            bgcolor: alpha(theme.palette.background.paper, 0.9),
+                            backdropFilter: "blur(10px)",
+                            '&:before': {
+                                content: '""',
+                                display: 'block',
+                                position: 'absolute',
+                                top: 0,
+                                right: 14,
+                                width: 10,
+                                height: 10,
+                                bgcolor: 'background.paper',
+                                transform: 'translateY(-50%) rotate(45deg)',
+                                zIndex: 0,
+                            },
+                        },
                     }}
+                    transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                    anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
-                    <ExitToAppIcon fontSize="small" />
-                </IconButton>
+                    <Box px={2} py={1}>
+                        <Typography variant="subtitle2" fontWeight="bold">Test User</Typography>
+                        <Typography variant="caption" color="text.secondary">test@example.com</Typography>
+                    </Box>
+                    <Divider sx={{ my: 0.5 }} />
+                    <MenuItem onClick={handleProfileClick} sx={{ borderRadius: 1, mx: 1 }}>
+                        <ListItemIcon>
+                            <SettingsIcon fontSize="small" />
+                        </ListItemIcon>
+                        Profile & Settings
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout} sx={{ borderRadius: 1, mx: 1, color: 'error.main' }}>
+                        <ListItemIcon>
+                            <ExitToAppIcon fontSize="small" color="error" />
+                        </ListItemIcon>
+                        Logout
+                    </MenuItem>
+                </Menu>
             </Toolbar>
         </AppBar>
     );
