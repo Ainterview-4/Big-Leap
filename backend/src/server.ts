@@ -6,19 +6,33 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import dotenv from "dotenv";
 import { errorHandler } from "./middlewares/errorHandler";
+import { prisma } from "./prisma";
 
 dotenv.config();
 
 const app = express();
 
+/**
+ * Config
+ */
+const PORT = process.env.PORT || 5000;
+
+// İstersen .env'de: CORS_ORIGIN=http://localhost:5173,http://localhost:3000
+const corsOriginEnv = process.env.CORS_ORIGIN || "http://localhost:5173";
+const corsOrigins = corsOriginEnv.split(",").map((o) => o.trim());
+
 // Middleware
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-// Absolute path for OpenAPI file (fix for macOS)
+/**
+ * Swagger
+ */
 const openapiPath = path.join(__dirname, "..", "docs", "openapi.yaml");
 
 if (!fs.existsSync(openapiPath)) {
@@ -29,19 +43,37 @@ if (!fs.existsSync(openapiPath)) {
 
 const swaggerDocument = YAML.load(openapiPath);
 
-// Swagger UI Route
 app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, { explorer: true })
 );
 
-// Auth Routes
+/**
+ * Routes
+ * Swagger request URL'in /api/... olduğu için prefix'i /api yaptık
+ */
 import authRoutes from "./routes/auth";
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
+
+// Health & debug routes (istersen bunları da /api altına alalım)
+app.get("/api/health/db", async (_req, res) => {
+  try {
+    await prisma.$connect();
+    res.json({ status: "ok", message: "Database connection successful" });
+  } catch (error) {
+    console.error("DB Connection Error:", error);
+    res.status(500).json({ status: "error", message: "Database connection failed", error });
+  }
+});
+
+app.get("/api/users", async (_req, res) => {
+  const users = await prisma.user.findMany();
+  res.json({ success: true, users });
+});
 
 // Root Endpoint
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.json({ message: "Backend API is running!" });
 });
 
@@ -49,7 +81,6 @@ app.get("/", (req, res) => {
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
