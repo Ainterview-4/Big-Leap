@@ -6,6 +6,7 @@ import {
     Box,
     Button,
     CircularProgress,
+    Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -19,7 +20,8 @@ const CVUpload: React.FC = () => {
 
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const [successState, setSuccessState] = useState(false); // Renamed to avoid conficts if any
+    // const [error, setError] = useState<string | null>(null); // Removed in favor of toast
+    const [success, setSuccess] = useState(false);
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +36,8 @@ const CVUpload: React.FC = () => {
             }
 
             setFile(selectedFile);
-            setSuccessState(false);
+            // setError(null);
+            setSuccess(false);
         }
     };
 
@@ -51,12 +54,12 @@ const CVUpload: React.FC = () => {
 
         try {
             setLoading(true);
+            // setError(null);
 
             await uploadCVRequest(file);
 
-            toast.success("CV Uploaded Successfully! Analyzing...");
-            setSuccessState(true);
-
+            toast.success("CV Uploaded Successfully!");
+            setSuccess(true);
             // Navigate to result page
             setTimeout(() => {
                 navigate("/cv/result", { state: { filename: file.name } });
@@ -87,6 +90,8 @@ const CVUpload: React.FC = () => {
                 <Typography variant="body1" color="text.secondary" paragraph sx={{ mb: 4 }}>
                     To start your AI interview preparation, please upload your resume (PDF only).
                 </Typography>
+
+                {/* Error Alert Removed */}
 
                 {/* Upload Area */}
                 <Box
