@@ -6,7 +6,6 @@ import {
     Box,
     Button,
     CircularProgress,
-    Fade,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -21,7 +20,7 @@ const CVUpload: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     // const [error, setError] = useState<string | null>(null); // Removed in favor of toast
-    const [success, setSuccess] = useState(false);
+    const [successState, setSuccessState] = useState(false);
 
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +36,7 @@ const CVUpload: React.FC = () => {
 
             setFile(selectedFile);
             // setError(null);
-            setSuccess(false);
+            setSuccessState(false);
         }
     };
 
@@ -59,7 +58,7 @@ const CVUpload: React.FC = () => {
             await uploadCVRequest(file);
 
             toast.success("CV Uploaded Successfully!");
-            setSuccess(true);
+            setSuccessState(true);
             // Navigate to result page
             setTimeout(() => {
                 navigate("/cv/result", { state: { filename: file.name } });

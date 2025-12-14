@@ -10,7 +10,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
             const savedMode = localStorage.getItem("themeMode");
             return (savedMode === "light" || savedMode === "dark") ? savedMode : "light";
-        } catch (e) {
+        } catch {
             return "light";
         }
     });
