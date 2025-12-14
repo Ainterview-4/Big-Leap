@@ -4,12 +4,16 @@ import path from "path";
 import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import dotenv from "dotenv";
+import { errorHandler } from "./middlewares/errorHandler";
+
+dotenv.config();
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
   credentials: true
 }));
 app.use(express.json());
@@ -40,6 +44,9 @@ app.use("/auth", authRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "Backend API is running!" });
 });
+
+// Error handler
+app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5001;
