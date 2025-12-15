@@ -9,6 +9,8 @@ import path from "path";
 import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import userRoutes from "./routes/user";
+
 
 import { errorHandler } from "./middlewares/errorHandler";
 import { prisma } from "./prisma";
@@ -73,6 +75,10 @@ app.use("/auth", authRoutes);
 // New API v1 Auth (DB-backed)
 app.use("/api/auth", apiAuthRoutes);
 
+// New API v1 User
+app.use("/api/user", userRoutes);
+
+
 // Health & debug routes (istersen bunları da /api altına alalım)
 app.get("/api/health/db", async (_req, res) => {
   try {
@@ -96,6 +102,29 @@ app.get("/", (_req, res) => {
 
 // Error handler
 app.use(errorHandler);
+
+// Error handler
+app.use(errorHandler);
+
+/**
+ * DEBUG: registered routes
+ */
+console.log(
+  "ROUTES:",
+  (app as any)._router?.stack
+    ?.filter((r: any) => r.route)
+    ?.map((r: any) => ({
+      path: r.route.path,
+      methods: Object.keys(r.route.methods),
+    }))
+);
+
+// Start server 
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
+});
+
 
 // Start server 
 app.listen(PORT, () => {
