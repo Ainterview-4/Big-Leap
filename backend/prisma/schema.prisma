@@ -17,13 +17,30 @@ model User {
   
   interviews InterviewSession[]
 }
-
-model InterviewSession {
+model Interview {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  status    String   @default("STARTED") // STARTED, COMPLETED
-  score     Int?
+  title     String
+  role      String?
+  company   String?
+  level     String?
+  language  String?  @default("tr")
+  status    String   @default("DRAFT")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sessions  InterviewSession[]
+}
+
+model InterviewSession {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id])
+  status      String    @default("STARTED") // STARTED, COMPLETED
+  score       Int?
+  startedAt   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

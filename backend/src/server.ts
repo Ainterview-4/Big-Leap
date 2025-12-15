@@ -10,6 +10,7 @@ import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import userRoutes from "./routes/user";
+import interviewsRouter from "./routes/interviews";
 
 
 import { errorHandler } from "./middlewares/errorHandler";
@@ -78,6 +79,9 @@ app.use("/api/auth", apiAuthRoutes);
 // New API v1 User
 app.use("/api/user", userRoutes);
 
+// New API v1 Interviews
+app.use("/api/interviews", interviewsRouter);
+
 
 // Health & debug routes (istersen bunları da /api altına alalım)
 app.get("/api/health/db", async (_req, res) => {
@@ -126,8 +130,4 @@ app.listen(PORT, () => {
 });
 
 
-// Start server 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
-});
+
