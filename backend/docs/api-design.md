@@ -8,7 +8,7 @@ Swagger/OpenAPI üretimi bu doküman temel alınarak yapılacaktır.
 # 1. Genel Bilgiler
 
 **Base URL (local)**  
-[text](http://localhost:5000/api)
+[text](http://localhost:5001/api)
 
 
 **Auth yöntemi**  

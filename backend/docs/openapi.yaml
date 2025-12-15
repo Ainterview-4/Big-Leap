@@ -5,7 +5,7 @@ info:
   description: API documentation for the Interview AI MVP backend.
 
 servers:
-  - url: http://localhost:5000/api
+  - url: http://localhost:5001/api
 
 paths:
 

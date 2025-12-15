@@ -1,21 +1,30 @@
+import dotenv from "dotenv";
+dotenv.config();
+console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
+
+
 import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import dotenv from "dotenv";
+
 import { errorHandler } from "./middlewares/errorHandler";
 import { prisma } from "./prisma";
-
-dotenv.config();
+import { authGuard } from "./middlewares/authGuard";
+import authRoutes from "./routes/auth";
+import apiAuthRoutes from "./routes/apiAuth";
 
 const app = express();
+
+
 
 /**
  * Config
  */
-const PORT = process.env.PORT || 5000;
+// Force 5001 if PORT is 5000 (common conflict) or undefined
+const PORT = 5001;
 
 // İstersen .env'de: CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 const corsOriginEnv = process.env.CORS_ORIGIN || "http://localhost:5173";
@@ -53,9 +62,15 @@ app.use(
  * Routes
  * Swagger request URL'in /api/... olduğu için prefix'i /api yaptık
  */
-import authRoutes from "./routes/auth";
-app.use("/api/auth", authRoutes);
-import apiAuthRoutes from "./routes/apiAuth";
+
+app.get("/api/me", authGuard, (req, res) => {
+  res.json({ success: true, user: req.user });
+});
+
+// Legacy Auth (Mock / In-memory)
+app.use("/auth", authRoutes);
+
+// New API v1 Auth (DB-backed)
 app.use("/api/auth", apiAuthRoutes);
 
 // Health & debug routes (istersen bunları da /api altına alalım)
@@ -82,7 +97,7 @@ app.get("/", (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
+// Start server 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
