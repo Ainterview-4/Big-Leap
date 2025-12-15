@@ -1,0 +1,27 @@
+name: Task
+description: Technical task within a feature
+title: "[Task]: "
+labels: ["task"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      placeholder: "This task includes..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      placeholder: |
+        - [ ] Backend API created
+        - [ ] UI implemented
+        - [ ] Tests written
+
+  - type: input
+    id: related
+    attributes:
+      label: Related Feature Issue #
+      placeholder: "#12"

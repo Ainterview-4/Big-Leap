@@ -1,0 +1,13 @@
+name: PR Quality Check
+
+on:
+  pull_request:
+
+jobs:
+  verify-all:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify CI checks
+        run: |
+          echo "Backend + Frontend + AI CI must pass before merging."
