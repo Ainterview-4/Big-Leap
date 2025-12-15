@@ -55,6 +55,8 @@ app.use(
  */
 import authRoutes from "./routes/auth";
 app.use("/api/auth", authRoutes);
+import apiAuthRoutes from "./routes/apiAuth";
+app.use("/api/auth", apiAuthRoutes);
 
 // Health & debug routes (istersen bunları da /api altına alalım)
 app.get("/api/health/db", async (_req, res) => {
