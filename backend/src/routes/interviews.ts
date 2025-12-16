@@ -5,6 +5,9 @@ import {
     startSession,
     listMyInterviews,
     getInterviewById,
+    answerInterview,
+    evaluateInterview,
+    getSessionById,
 } from "../controllers/interview.controller";
 
 const router = Router();
@@ -20,5 +23,11 @@ router.get("/:interviewId", authGuard, getInterviewById);
 
 // POST /api/interviews/:interviewId/sessions -> session başlat
 router.post("/:interviewId/sessions", authGuard, startSession);
+
+router.post("/sessions/:sessionId/answer", authGuard, answerInterview);
+router.post("/sessions/:sessionId/evaluate", authGuard, evaluateInterview);
+router.get("/sessions/:sessionId", authGuard, getSessionById);
+
+
 
 export default router;

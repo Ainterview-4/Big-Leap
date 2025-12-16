@@ -14,9 +14,10 @@ model User {
   name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  
+
   interviews InterviewSession[]
 }
+
 model Interview {
   id        String   @id @default(uuid())
   userId    String
@@ -29,18 +30,34 @@ model Interview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions  InterviewSession[]
+  sessions InterviewSession[]
+}
+
+model InterviewMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String // "assistant" | "user"
+  content   String
+  createdAt DateTime @default(now())
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 
 model InterviewSession {
-  id          String    @id @default(uuid())
+  id          String             @id @default(uuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  user        User               @relation(fields: [userId], references: [id])
   interviewId String
-  interview   Interview @relation(fields: [interviewId], references: [id])
-  status      String    @default("STARTED") // STARTED, COMPLETED
+  interview   Interview          @relation(fields: [interviewId], references: [id])
+  status      String             @default("STARTED") // STARTED, COMPLETED
   score       Int?
-  startedAt   DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  startedAt       DateTime           @default(now())
+  endedAt         DateTime?
+  currentQuestion Int                @default(0)
+  feedback        String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  messages        InterviewMessage[]
 }
