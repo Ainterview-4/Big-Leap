@@ -12,15 +12,12 @@ import YAML from "yamljs";
 import userRoutes from "./routes/user";
 import interviewsRouter from "./routes/interviews";
 
-
 import { errorHandler } from "./middlewares/errorHandler";
 import { prisma } from "./prisma";
 import { authGuard } from "./middlewares/authGuard";
 import authRoutes from "./routes/auth";
 import apiAuthRoutes from "./routes/apiAuth";
 import { corsMiddleware } from "./middlewares/corsMiddleware";
-
-
 
 const app = express();
 
@@ -82,9 +79,6 @@ app.use("/api/interviews", interviewsRouter);
 
 
 app.use(corsMiddleware);
-
-
-
 // Health & debug routes (istersen bunları da /api altına alalım)
 app.get("/api/health/db", async (_req, res) => {
   try {
@@ -124,12 +118,9 @@ console.log(
       methods: Object.keys(r.route.methods),
     }))
 );
-
 // Start server 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
 });
-
-
 

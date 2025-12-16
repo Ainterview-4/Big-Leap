@@ -11,7 +11,6 @@ const App: React.FC = () => {
       <ApiSmokeTest />
 
       <AppRouter />
-
       <ToastContainer
         position="top-right"
         autoClose={3000}
