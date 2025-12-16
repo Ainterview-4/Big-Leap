@@ -9,12 +9,15 @@ import path from "path";
 import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import userRoutes from "./routes/user";
+import interviewsRouter from "./routes/interviews";
 
 import { errorHandler } from "./middlewares/errorHandler";
 import { prisma } from "./prisma";
 import { authGuard } from "./middlewares/authGuard";
 import authRoutes from "./routes/auth";
 import apiAuthRoutes from "./routes/apiAuth";
+import { corsMiddleware } from "./middlewares/corsMiddleware";
 
 const app = express();
 
@@ -31,12 +34,7 @@ const corsOriginEnv = process.env.CORS_ORIGIN || "http://localhost:5173";
 const corsOrigins = corsOriginEnv.split(",").map((o) => o.trim());
 
 // Middleware
-app.use(
-  cors({
-    origin: corsOrigins,
-    credentials: true,
-  })
-);
+app.use(corsMiddleware);
 app.use(express.json());
 
 /**
@@ -73,6 +71,14 @@ app.use("/auth", authRoutes);
 // New API v1 Auth (DB-backed)
 app.use("/api/auth", apiAuthRoutes);
 
+// New API v1 User
+app.use("/api/user", userRoutes);
+
+// New API v1 Interviews
+app.use("/api/interviews", interviewsRouter);
+
+
+app.use(corsMiddleware);
 // Health & debug routes (istersen bunları da /api altına alalım)
 app.get("/api/health/db", async (_req, res) => {
   try {
@@ -97,8 +103,24 @@ app.get("/", (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
+// Error handler
+app.use(errorHandler);
+
+/**
+ * DEBUG: registered routes
+ */
+console.log(
+  "ROUTES:",
+  (app as any)._router?.stack
+    ?.filter((r: any) => r.route)
+    ?.map((r: any) => ({
+      path: r.route.path,
+      methods: Object.keys(r.route.methods),
+    }))
+);
 // Start server 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
 });
+
