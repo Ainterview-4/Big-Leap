@@ -1,6 +1,7 @@
 import React from "react";
 import api from "../../api/axiosInstance";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 export default function ApiSmokeTest() {
     const test = async () => {
@@ -11,7 +12,8 @@ export default function ApiSmokeTest() {
             const res = await api.get("/interviews");
             toast.success(`✅ Backend OK: ${Array.isArray(res.data) ? res.data.length : 'OK'}`);
             console.log("API response:", res.data);
-        } catch (err: any) {
+        } catch (error) {
+            const err = error as AxiosError<{ error?: { message?: string }; message?: string }>;
             const msg =
                 err?.response?.data?.error?.message ||
                 err?.response?.data?.message ||
