@@ -18,6 +18,9 @@ import { prisma } from "./prisma";
 import { authGuard } from "./middlewares/authGuard";
 import authRoutes from "./routes/auth";
 import apiAuthRoutes from "./routes/apiAuth";
+import { corsMiddleware } from "./middlewares/corsMiddleware";
+
+
 
 const app = express();
 
@@ -34,12 +37,7 @@ const corsOriginEnv = process.env.CORS_ORIGIN || "http://localhost:5173";
 const corsOrigins = corsOriginEnv.split(",").map((o) => o.trim());
 
 // Middleware
-app.use(
-  cors({
-    origin: corsOrigins,
-    credentials: true,
-  })
-);
+app.use(corsMiddleware);
 app.use(express.json());
 
 /**
@@ -81,6 +79,10 @@ app.use("/api/user", userRoutes);
 
 // New API v1 Interviews
 app.use("/api/interviews", interviewsRouter);
+
+
+app.use(corsMiddleware);
+
 
 
 // Health & debug routes (istersen bunları da /api altına alalım)
