@@ -11,14 +11,29 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
-  error: any;
+  error: ApiError | null;
+}
+
+export interface RegisterResponse {
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    createdAt: string;
+  };
 }
 
 export const registerRequest = (payload: RegisterPayload) =>
-  api.post<ApiResponse<any>>("/auth/register", payload);
+  api.post<ApiResponse<RegisterResponse>>("/auth/register", payload);
 
 
 export interface LoginResponse {
