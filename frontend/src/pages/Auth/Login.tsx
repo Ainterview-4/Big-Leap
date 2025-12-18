@@ -55,9 +55,11 @@ const Login: React.FC = () => {
       setServerError(null);
 
       const response = await loginRequest(data);
+      // Backend sends { success: true, data: { token: ... } }
+      const loginData = response.data?.data;
 
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
+      if (loginData?.token) {
+        localStorage.setItem("token", loginData.token);
         navigate("/dashboard");
       } else {
         setServerError("Login failed. Please try again.");

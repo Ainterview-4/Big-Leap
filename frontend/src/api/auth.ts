@@ -11,8 +11,14 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error: any;
+}
+
 export const registerRequest = (payload: RegisterPayload) =>
-  api.post("/auth/register", payload);
+  api.post<ApiResponse<any>>("/auth/register", payload);
 
 
 export interface LoginResponse {
@@ -25,7 +31,7 @@ export interface LoginResponse {
 }
 
 export const loginRequest = (payload: LoginPayload) => {
-  return api.post<LoginResponse>("/auth/login", payload);
+  return api.post<ApiResponse<LoginResponse>>("/auth/login", payload);
 };
 
 export interface ResetPasswordPayload {
@@ -33,5 +39,5 @@ export interface ResetPasswordPayload {
 }
 
 export const resetPasswordRequest = (payload: ResetPasswordPayload) => {
-  return api.post<{ message: string }>("/auth/reset-password", payload);
+  return api.post<ApiResponse<{ message: string }>>("/auth/reset-password", payload);
 };
