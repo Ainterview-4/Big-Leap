@@ -7,8 +7,9 @@ applications:
           commands:
             - npm ci
             # CRITICAL: Create .env file from Amplify Environment Variables
-            - echo "VITE_API_URL=$VITE_API_URL" > .env
-            - echo "VITE_API_URL is set to $VITE_API_URL"
+            # Improved Env Var Injection
+            - printenv | grep VITE_ > .env
+            - cat .env
         build:
           commands:
             - npm run build
