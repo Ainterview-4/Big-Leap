@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authGuard } from "../middlewares/authGuard";
+import { authGuard } from "../../middlewares/authGuard";
 import {
     createInterview,
     startSession,
@@ -8,7 +8,7 @@ import {
     answerInterview,
     evaluateInterview,
     getSessionById,
-} from "../controllers/interview.controller";
+} from "./interview.controller";
 
 const router = Router();
 
@@ -27,7 +27,5 @@ router.post("/:interviewId/sessions", authGuard, startSession);
 router.post("/sessions/:sessionId/answer", authGuard, answerInterview);
 router.post("/sessions/:sessionId/evaluate", authGuard, evaluateInterview);
 router.get("/sessions/:sessionId", authGuard, getSessionById);
-
-
 
 export default router;

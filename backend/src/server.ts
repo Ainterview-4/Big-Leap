@@ -1,39 +1,34 @@
 import dotenv from "dotenv";
 dotenv.config();
-console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
-
 
 import express from "express";
-import cors from "cors";
 import path from "path";
 import fs from "fs";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import userRoutes from "./routes/user";
-import interviewsRouter from "./routes/interviews";
 
-import { errorHandler } from "./middlewares/errorHandler";
 import { prisma } from "./prisma";
+import { errorHandler } from "./middlewares/errorHandler";
 import { authGuard } from "./middlewares/authGuard";
-import authRoutes from "./routes/auth";
-import apiAuthRoutes from "./routes/apiAuth";
 import { corsMiddleware } from "./middlewares/corsMiddleware";
 
+import userRoutes from "./routes/user";
+import authRoutes from "./routes/auth";
+import cvRoutes from "./modules/cv/cv.routes";
+import interviewRoutes from "./modules/interview/interview.routes";
+
+console.log("JWT_SECRET loaded?", !!process.env.JWT_SECRET);
+
 const app = express();
-
-
 
 /**
  * Config
  */
-// Force 5001 if PORT is 5000 (common conflict) or undefined
-const PORT = 5001;
+const PORT = Number(process.env.PORT) || 5001;
 
-// İstersen .env'de: CORS_ORIGIN=http://localhost:5173,http://localhost:3000
-const corsOriginEnv = process.env.CORS_ORIGIN || "http://localhost:5173";
-const corsOrigins = corsOriginEnv.split(",").map((o) => o.trim());
-
-// Middleware
+/**
+ * Middleware
+ */
 app.use(corsMiddleware);
 app.use(express.json());
 
@@ -58,35 +53,35 @@ app.use(
 
 /**
  * Routes
- * Swagger request URL'in /api/... olduğu için prefix'i /api yaptık
  */
-
 app.get("/api/me", authGuard, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 
-// Legacy Auth (Mock / In-memory)
-app.use("/auth", authRoutes);
+// ✅ Auth (single source of truth)
+app.use("/api/auth", authRoutes);
 
-// New API v1 Auth (DB-backed)
-app.use("/api/auth", apiAuthRoutes);
-
-// New API v1 User
+// ✅ User
 app.use("/api/user", userRoutes);
 
-// New API v1 Interviews
-app.use("/api/interviews", interviewsRouter);
+// ✅ CV
+app.use("/api/cv", cvRoutes);
 
+// ✅ Interview (standardize prefix)
+app.use("/api/interview", interviewRoutes);
 
-app.use(corsMiddleware);
-// Health & debug routes (istersen bunları da /api altına alalım)
+// Health & debug routes
 app.get("/api/health/db", async (_req, res) => {
   try {
     await prisma.$connect();
     res.json({ status: "ok", message: "Database connection successful" });
   } catch (error) {
     console.error("DB Connection Error:", error);
-    res.status(500).json({ status: "error", message: "Database connection failed", error });
+    res.status(500).json({
+      status: "error",
+      message: "Database connection failed",
+      error,
+    });
   }
 });
 
@@ -100,10 +95,7 @@ app.get("/", (_req, res) => {
   res.json({ message: "Backend API is running!" });
 });
 
-// Error handler
-app.use(errorHandler);
-
-// Error handler
+// Error handler (✅ only once)
 app.use(errorHandler);
 
 /**
@@ -118,9 +110,9 @@ console.log(
       methods: Object.keys(r.route.methods),
     }))
 );
-// Start server 
+
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
 });
-
