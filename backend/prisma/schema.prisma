@@ -16,6 +16,7 @@ model User {
   updatedAt DateTime @default(now()) @updatedAt
 
   interviews InterviewSession[]
+  cvs        Cv[]
 }
 
 model Interview {
@@ -46,18 +47,44 @@ model InterviewMessage {
 }
 
 model InterviewSession {
-  id          String             @id @default(uuid())
+  id          String   @id @default(uuid())
   userId      String
-  user        User               @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
   interviewId String
-  interview   Interview          @relation(fields: [interviewId], references: [id])
-  status      String             @default("STARTED") // STARTED, COMPLETED
+  interview   Interview @relation(fields: [interviewId], references: [id])
+
+  cvId        String?
+  cv          Cv?      @relation(fields: [cvId], references: [id])
+
+  status      String   @default("STARTED")
   score       Int?
-  startedAt       DateTime           @default(now())
-  endedAt         DateTime?
-  currentQuestion Int                @default(0)
-  feedback        String?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  messages        InterviewMessage[]
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  currentQuestion Int  @default(0)
+  feedback    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages    InterviewMessage[]
+}
+
+
+model Cv {
+  id          String   @id @default(uuid())
+  userId      String
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  s3Key       String
+  s3Url       String
+  textExtract String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  interviewSessions InterviewSession[]
+
+  @@index([userId])
 }

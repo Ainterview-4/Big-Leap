@@ -1,78 +1,115 @@
-import express from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { Router } from "express";
+import bcrypt from "bcryptjs";
 import { prisma } from "../prisma";
+import { ok, fail } from "../utils/response";
+import jwt from "jsonwebtoken";
 
-const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
 
+const router = Router();
+
+/**
+ * POST /api/auth/register
+ * body: { email, password, full_name }
+ * name gelirse full_name yerine kabul ediyoruz (fallback)
+ */
 router.post("/register", async (req, res) => {
     try {
-        const { email, password, name } = req.body;
 
-        if (!email || !password) {
-            res.status(400).json({ message: "Email ve şifre gerekli" });
-            return;
+        const email = String(req.body?.email ?? "").trim().toLowerCase();
+
+
+        const password = String(req.body?.password ?? "");
+        // Frontend "full_name" gönderiyor ama Prisma "name" bekliyor
+        const name = String(req.body?.full_name ?? req.body?.name ?? "").trim();
+
+        if (!email || !password || !name) {
+            return fail(
+                res,
+                "VALIDATION_ERROR",
+                "email, password, full_name are required",
+                null,
+                400
+            );
         }
 
+        // Email kontrolü
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
-            res.status(400).json({ message: "Bu email ile zaten kayıt olunmuş" });
-            return;
+            return fail(res, "EMAIL_EXISTS", "Email already registered", null, 409);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
         const newUser = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
                 name,
             },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                createdAt: true,
+            },
         });
 
-        res.status(201).json({
-            message: "Kayıt başarılı",
-            user: { id: newUser.id, email: newUser.email }
-        });
-    } catch (error) {
-        console.error("Register Error:", error);
-        res.status(500).json({ message: "Kayıt sırasında bir hata oluştu" });
+        return ok(res, { user: newUser }, 201);
+    } catch (err: any) {
+        console.error("POST /api/auth/register error:", err);
+        return fail(res, "SERVER_ERROR", "Unexpected error", err?.message ?? null, 500);
     }
 });
 
+/**
+ * POST /api/auth/login
+ * body: { email, password }
+ */
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = String(req.body?.email ?? "").trim().toLowerCase();
+        const password = String(req.body?.password ?? "");
+
+
+        if (!email || !password) {
+            return fail(res, "VALIDATION_ERROR", "email and password are required", null, 400);
+        }
 
         const user = await prisma.user.findUnique({ where: { email } });
+
         if (!user) {
-            res.status(401).json({ message: "Geçersiz email veya şifre" });
-            return;
+            return fail(res, "INVALID_CREDENTIALS", "Email or password incorrect", null, 401);
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            res.status(401).json({ message: "Geçersiz email veya şifre" });
-            return;
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return fail(res, "INVALID_CREDENTIALS", "Email or password incorrect", null, 401);
         }
 
-        const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1d" });
 
-        res.json({
+        if (!process.env.JWT_SECRET) {
+            return fail(res, "CONFIG_ERROR", "JWT_SECRET not set", null, 500);
+        }
+
+        const token = jwt.sign(
+            { userId: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        return ok(res, {
             token,
-            user: { id: user.id, email: user.email }
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+            },
         });
-    } catch (error) {
-        console.error("Login Error:", error);
-        res.status(500).json({ message: "Giriş sırasında bir hata oluştu" });
+    } catch (err: any) {
+        console.error("POST /api/auth/login error:", err);
+        return fail(res, "SERVER_ERROR", "Unexpected error", err?.message ?? null, 500);
     }
 });
 
-router.post("/reset-password", async (req, res) => {
-    const { email } = req.body;
-    // Password reset logic would go here (sending email etc.)
-    console.log(`Password Reset Request for: ${email}`);
-    res.json({ message: "Şifre sıfırlama bağlantısı gönderildi" });
-});
 
 export default router;

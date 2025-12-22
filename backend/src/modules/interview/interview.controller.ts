@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { prisma } from "../prisma";
-import { ok, fail } from "../utils/response";
+import { prisma } from "../../prisma";
+import { ok, fail } from "../../utils/response";
 
 /**
  * POST /api/interviews
@@ -50,40 +50,50 @@ export const startSession = async (req: Request, res: Response) => {
     }
 
     const { interviewId } = req.params;
+    const { cvId } = req.body ?? {}; // ✅ 10.2 - body’den al
 
     if (!interviewId) {
         return fail(res, "VALIDATION_ERROR", "interviewId is required", null, 400);
     }
 
-    // Interview bu kullanıcıya mı ait?
+    // ✅ Interview bu kullanıcıya mı ait?
     const interview = await prisma.interview.findFirst({
         where: { id: interviewId, userId },
         select: { id: true },
     });
 
     if (!interview) {
-        return fail(
-            res,
-            "NOT_FOUND",
-            "Interview not found",
-            { interviewId },
-            404
-        );
+        return fail(res, "NOT_FOUND", "Interview not found", { interviewId }, 404);
     }
 
+    // ✅ 10.2 - cvId geldiyse: bu kullanıcıya mı ait?
+    if (cvId) {
+        const cv = await prisma.cv.findFirst({
+            where: { id: cvId, userId },
+            select: { id: true },
+        });
+
+        if (!cv) {
+            return fail(res, "NOT_FOUND", "CV not found", { cvId }, 404);
+        }
+    }
+
+    // ✅ session create: cvId’yi bağla
     const session = await prisma.interviewSession.create({
         data: {
             interviewId,
             userId,
+            cvId: cvId ?? null, // ✅ bağlandı
             status: "IN_PROGRESS",
             startedAt: new Date(),
-            currentQuestion: 0, // varsa
+
         },
     });
 
-    // İstersen ilk soruyu burada da başlatabiliriz; şimdilik answer ile akacak.
+
     return ok(res, session, 201);
 };
+
 
 /**
  * GET /api/interviews
@@ -162,8 +172,12 @@ export const answerInterview = async (req: Request, res: Response) => {
 
     const session = await prisma.interviewSession.findFirst({
         where: { id: sessionId, userId },
-        include: { interview: true },
+        include: {
+            interview: true,
+            cv: true, // ✅ 10.5 için gerekli
+        },
     });
+
 
     if (!session) {
         return fail(res, "NOT_FOUND", "Session not found", { sessionId }, 404);
@@ -192,7 +206,12 @@ export const answerInterview = async (req: Request, res: Response) => {
     const nextQuestionIndex = (session.currentQuestion ?? 0) + 1;
 
     // 3) şimdilik basit mock soru (LLM sonra)
-    const nextQuestion = `Soru ${nextQuestionIndex}: Bu konudaki deneyimini biraz daha açar mısın?`;
+    let nextQuestion = `Soru ${nextQuestionIndex}: Bu konudaki deneyimini biraz daha açar mısın?`;
+
+    if (session.cv) {
+        nextQuestion = `Soru ${nextQuestionIndex}: CV'nde yer alan "${session.cv.fileName}" ile ilgili en güçlü olduğunu düşündüğün kısmı anlatır mısın?`;
+    }
+
 
     // 4) assistant sorusunu kaydet
     await prisma.interviewMessage.create({
@@ -234,8 +253,9 @@ export const evaluateInterview = async (req: Request, res: Response) => {
 
     const session = await prisma.interviewSession.findFirst({
         where: { id: sessionId, userId },
-        include: { messages: true, interview: true },
+        include: { messages: true, interview: true, cv: true },
     });
+
 
     if (!session) {
         return fail(res, "NOT_FOUND", "Session not found", { sessionId }, 404);
@@ -245,12 +265,20 @@ export const evaluateInterview = async (req: Request, res: Response) => {
     const msgCount = session.messages?.length ?? 0;
     const score = Math.min(100, msgCount * 10);
 
-    const feedback = [
+    const feedbackLines = [
         "İletişim: İyi",
         "Teknik seviye: Orta",
         "Genel izlenim: Pozitif",
         `Mesaj sayısı: ${msgCount}`,
-    ].join("\n");
+    ];
+
+    if (session.cv) {
+        feedbackLines.push(`CV referansı: ${session.cv.fileName}`);
+        feedbackLines.push("Not: Değerlendirme CV ile uyum hedeflenerek yapılmıştır (mock).");
+    }
+
+    const feedback = feedbackLines.join("\n");
+
 
     const updated = await prisma.interviewSession.update({
         where: { id: session.id },
@@ -286,8 +314,10 @@ export const getSessionById = async (req: Request, res: Response) => {
         where: { id: sessionId, userId },
         include: {
             interview: true,
+            cv: true, // ✅ eklendi
             messages: { orderBy: { createdAt: "asc" } },
         },
+
     });
 
     if (!session) {
