@@ -33,7 +33,7 @@ export interface RegisterResponse {
 }
 
 export const registerRequest = (payload: RegisterPayload) =>
-  api.post<ApiResponse<RegisterResponse>>("/auth/register", payload);
+  api.post<RegisterResponse>("/auth/register", payload);
 
 
 export interface LoginResponse {
@@ -46,7 +46,7 @@ export interface LoginResponse {
 }
 
 export const loginRequest = (payload: LoginPayload) => {
-  return api.post<ApiResponse<LoginResponse>>("/auth/login", payload);
+  return api.post<LoginResponse>("/auth/login", payload);
 };
 
 export interface ResetPasswordPayload {
@@ -54,5 +54,5 @@ export interface ResetPasswordPayload {
 }
 
 export const resetPasswordRequest = (payload: ResetPasswordPayload) => {
-  return api.post<ApiResponse<{ message: string }>>("/auth/reset-password", payload);
+  return api.post<{ message: string }>("/auth/reset-password", payload);
 };
