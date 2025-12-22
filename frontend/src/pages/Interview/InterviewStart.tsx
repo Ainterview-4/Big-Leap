@@ -16,6 +16,7 @@ import type { SelectChangeEvent } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SettingsVoiceIcon from "@mui/icons-material/SettingsVoice";
 import { useNavigate } from "react-router-dom";
+import { createInterview, startInterviewSession } from "../../services/interviewApi";
 
 const InterviewStart: React.FC = () => {
   const navigate = useNavigate();
@@ -24,16 +25,52 @@ const InterviewStart: React.FC = () => {
   const [role, setRole] = useState("Frontend Developer");
   const [experience, setExperience] = useState("Mid-Level");
   const [focusArea, setFocusArea] = useState("Technical Skills");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleStart = () => {
-    // Navigate to the QnA page with the selected configuration
-    navigate("/interview/qna", {
-      state: {
+  /* 
+   * Updated handleStart to integrate with backend API
+   */
+  const handleStart = async () => {
+    try {
+      setIsLoading(true);
+
+      // 1. Create Interview
+      const interviewParams = {
+        title: `${role} Interview`,
         role,
-        experience,
-        focusArea
+        level: experience,
+        // company: "Self-Practice",
+      };
+
+      const interviewRes = await createInterview(interviewParams);
+      const interview = interviewRes.data;
+
+      if (!interview?.id) {
+        throw new Error("Failed to create interview");
       }
-    });
+
+      // 2. Start Session
+      // TODO: If we have a selected CV, pass it here. For now, sending undefined/null.
+      const sessionRes = await startInterviewSession(interview.id);
+      const session = sessionRes.data;
+
+      // 3. Navigate
+      navigate("/interview/qna", {
+        state: {
+          role,
+          experience,
+          focusArea,
+          interviewId: interview.id,
+          sessionId: session?.id,
+          session
+        }
+      });
+    } catch (error) {
+      console.error("Start Error:", error);
+      // Could add toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -139,7 +176,8 @@ const InterviewStart: React.FC = () => {
               size="large"
               color="secondary"
               onClick={handleStart}
-              startIcon={<PlayArrowIcon />}
+              disabled={isLoading}
+              startIcon={isLoading ? null : <PlayArrowIcon />}
               sx={{
                 px: 8,
                 py: 1.5,
@@ -154,7 +192,7 @@ const InterviewStart: React.FC = () => {
                 transition: "all 0.2s"
               }}
             >
-              Start Session
+              {isLoading ? "Starting..." : "Start Session"}
             </Button>
           </Box>
         </Box>

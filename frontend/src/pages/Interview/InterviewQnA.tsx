@@ -10,49 +10,61 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
 import SendIcon from "@mui/icons-material/Send";
 import MicIcon from "@mui/icons-material/Mic";
 import TimerIcon from "@mui/icons-material/Timer";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useLocation, useNavigate } from "react-router-dom";
-
-// Mock Questions Generator (In real app, fetch from Backend)
-const getMockQuestions = (role: string) => [
-  {
-    id: 1,
-    question: `Can you explain the difference between 'let', 'const', and 'var' in JavaScript?`,
-    hint: "Think about scope and hoisting.",
-  },
-  {
-    id: 2,
-    question: `How would you optimize the performance of a React application with a large list of items?`,
-    hint: "Consider virtualization or memoization.",
-  },
-  {
-    id: 3,
-    question: `Describe a challenging bug you faced in a previous ${role} project and how you solved it.`,
-    hint: "Use the STAR method (Situation, Task, Action, Result).",
-  },
-];
+import { answerSession, evaluateSession } from "../../services/interviewApi";
 
 const InterviewQnA: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get state from Setup Page
-  const { role, experience, focusArea } = location.state || {
-    role: "Candidate",
-    experience: "General",
-    focusArea: "General",
-  };
+  const { role, experience, focusArea, sessionId, session } = location.state || {};
 
-  const questions = getMockQuestions(role);
-  const totalQuestions = questions.length;
-
-  // State
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Local State
+  const [currentQuestionText, setCurrentQuestionText] = useState<string>("");
+  const [questionIndex, setQuestionIndex] = useState<number>(1);
   const [answer, setAnswer] = useState("");
   const [timeLeft, setTimeLeft] = useState(120); // 2 minutes per question
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize from passed session data or fetch
+  useEffect(() => {
+    if (!sessionId) {
+      // Fallback or redirect if no session
+      console.warn("No sessionId provided, redirecting...");
+      navigate("/interview/start");
+      return;
+    }
+
+    if (session) {
+      // We might have the initial question in session data if backend returns it on create
+      // But typically create returns the session object. 
+      // We might need to fetch the *first* question text if it's not in the 'create' response or generated yet.
+      // Actually, creating a session usually implies starting. 
+      // Let's assume the backend 'answer' logic generates the *next* question.
+      // What about the FIRST question?
+      // If the backend doesn't provide a first question on Create, we might need a workaround or an initial "start" trigger.
+      // Looking at controller: create session -> status IN_PROGRESS. No messages yet? 
+      // We probably need to send an empty answer or a "start" signal to get the first question, 
+      // OR the backend createSession should have generated the first question.
+      // Let's check backend logic... 
+      // Backend 'startSession' just creates the record. It doesn't seem to generate a message.
+      // 'answerInterview' generates the next question.
+    }
+
+    // TEMPORARY: If no question exists, we simulate "starting" by asking the backend for a question 
+    // or we just display a welcome message and hit "Next" to get the first real question?
+    // Let's assume for now we call 'answer' with a "Hello" or "Ready" to trigger the first question 
+    // IF the conversation history is empty.
+    // Ideally we should Fetch the session details to see if messages exist.
+
+    // Setting a default starting prompt if none exists
+    setCurrentQuestionText("Please introduce yourself and tell us about your experience as a " + (role || "developer") + ".");
+
+  }, [sessionId, session, navigate, role]);
 
   // Timer Logic
   useEffect(() => {
@@ -60,7 +72,7 @@ const InterviewQnA: React.FC = () => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentIndex]);
+  }, [questionIndex]); // Reset on new question
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -68,22 +80,50 @@ const InterviewQnA: React.FC = () => {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const handleNext = () => {
-    // In a real app, save the answer here
-    console.log(`Answer for Q${currentIndex + 1}:`, answer);
+  const handleNext = async () => {
+    if (!sessionId) return;
 
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((prev) => prev + 1);
-      setAnswer("");
-      setTimeLeft(120); // Reset timer
-    } else {
-      // Finish Session
-      navigate("/interview/results");
+    try {
+      setIsLoading(true);
+      // Send answer to backend
+      const res = await answerSession(sessionId, answer);
+      const data = res.data; // { sessionId, questionIndex, nextQuestion }
+
+      if (data && data.nextQuestion) {
+        setCurrentQuestionText(data.nextQuestion);
+        setQuestionIndex(data.questionIndex || questionIndex + 1);
+        setAnswer("");
+        setTimeLeft(120);
+      } else {
+        // No next question? Maybe finished?
+        handleFinish();
+      }
+
+    } catch (err) {
+      console.error("Error submitting answer:", err);
+      // Handle error
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / totalQuestions) * 100;
+  const handleFinish = async () => {
+    if (!sessionId) return;
+    try {
+      setIsLoading(true);
+      await evaluateSession(sessionId);
+      navigate("/interview/results", { state: { sessionId } });
+    } catch (err) {
+      console.error("Error evaluating session:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Skip showing mocked list logic
+  // const totalQuestions = ... 
+  // For dynamic chat, we might not know total questions, or we fix it to 5 etc.
+  // Let's assume continuous for now or fix a limit.
 
   return (
     <Container maxWidth="md" sx={{ mt: 6, mb: 8 }}>
@@ -91,10 +131,10 @@ const InterviewQnA: React.FC = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Box>
           <Typography variant="h5" fontWeight="bold" color="primary">
-            {role} Interview
+            {role || "Interview"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {experience} Level • {focusArea}
+            {experience || "General"} • {focusArea || "General"}
           </Typography>
         </Box>
         <Chip
@@ -106,17 +146,17 @@ const InterviewQnA: React.FC = () => {
         />
       </Box>
 
-      {/* Progress Bar */}
+      {/* Progress Bar (Mocked for continuous flow) */}
       <Box sx={{ width: '100%', mb: 4 }}>
         <Box display="flex" justifyContent="space-between" mb={1}>
           <Typography variant="body2" color="text.secondary">
-            Question {currentIndex + 1} of {totalQuestions}
+            Question {questionIndex}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {Math.round(progress)}%
+            In Progress
           </Typography>
         </Box>
-        <LinearProgress variant="determinate" value={progress} sx={{ height: 10, borderRadius: 5 }} />
+        <LinearProgress variant="determinate" value={Math.min(questionIndex * 10, 100)} sx={{ height: 10, borderRadius: 5 }} />
       </Box>
 
       {/* Question Card */}
@@ -132,12 +172,11 @@ const InterviewQnA: React.FC = () => {
         }}
       >
         <Typography variant="h5" fontWeight="medium" gutterBottom>
-          {currentQuestion.question}
+          {currentQuestionText || "Loading question..."}
         </Typography>
 
-        {/* Optional Hint */}
         <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", mt: 2, display: "block" }}>
-          Hint: {currentQuestion.hint}
+          Hint: Be specific and provide examples.
         </Typography>
       </Paper>
 
@@ -151,6 +190,7 @@ const InterviewQnA: React.FC = () => {
           variant="outlined"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
+          disabled={isLoading}
           sx={{
             bgcolor: "background.paper",
             borderRadius: 2,
@@ -175,18 +215,18 @@ const InterviewQnA: React.FC = () => {
       <Box display="flex" justifyContent="space-between" mt={4}>
         <Button
           color="inherit"
-          onClick={() => navigate("/interview/start")}
+          onClick={() => handleFinish()} // Quit -> Validates/Evaluates what we have
           sx={{ textTransform: "none" }}
         >
-          Quit Session
+          End Session
         </Button>
 
         <Button
           variant="contained"
           size="large"
-          endIcon={currentIndex === totalQuestions - 1 ? <SendIcon /> : <ArrowForwardIcon />}
+          endIcon={isLoading ? null : <SendIcon />}
           onClick={handleNext}
-          disabled={answer.trim().length === 0}
+          disabled={answer.trim().length === 0 || isLoading}
           sx={{
             px: 5,
             borderRadius: 2,
@@ -194,7 +234,7 @@ const InterviewQnA: React.FC = () => {
             fontSize: "1.1rem"
           }}
         >
-          {currentIndex === totalQuestions - 1 ? "Submit & Finish" : "Next Question"}
+          {isLoading ? "Sending..." : "Submit Answer"}
         </Button>
       </Box>
     </Container>
