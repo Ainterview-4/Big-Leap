@@ -1,0 +1,21 @@
+version: 1
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+            # CRITICAL: Create .env file from Amplify Environment Variables
+            - echo "VITE_API_URL=$VITE_API_URL" > .env
+            - echo "VITE_API_URL is set to $VITE_API_URL"
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
