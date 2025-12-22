@@ -8,8 +8,9 @@ export default function ApiSmokeTest() {
             // Trying a simpler endpoint or the one user used. '/interviews' requires auth usually.
             // If we just want to test connectivity, maybe a public endpoint? 
             // User used /interviews. I'll stick to it but handle 401 gracefully.
-            const res = await api.get("/interviews");
-            toast.success(`✅ Backend OK: ${Array.isArray(res.data) ? res.data.length : 'OK'}`);
+            const res = await api.get("/api/interviews");
+            const data = res.data?.data;
+            toast.success(`✅ Backend OK: ${Array.isArray(data) ? data.length + ' items' : 'OK'}`);
             console.log("API response:", res.data);
         } catch (error) {
             const err = error as AxiosError<{ error?: { message?: string }; message?: string }>;
