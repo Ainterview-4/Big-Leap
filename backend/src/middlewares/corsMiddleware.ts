@@ -17,10 +17,12 @@ export const corsMiddleware = cors({
             return callback(null, true);
         }
 
-        return callback(
-            new Error(`CORS blocked for origin: ${origin}`),
-            false
-        );
+        // CORS blocked - log but don't throw error
+        console.warn(`⚠️  CORS blocked for origin: ${origin}`);
+        console.warn(`   Allowed origins: ${allowedList.join(', ')}`);
+
+        // Return false to deny, don't throw error
+        return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

@@ -5,12 +5,10 @@ import { AxiosError } from "axios";
 export default function ApiSmokeTest() {
     const test = async () => {
         try {
-            // Trying a simpler endpoint or the one user used. '/interviews' requires auth usually.
-            // If we just want to test connectivity, maybe a public endpoint? 
-            // User used /interviews. I'll stick to it but handle 401 gracefully.
-            const res = await api.get("/api/interviews");
-            const data = res.data?.data;
-            toast.success(`✅ Backend OK: ${Array.isArray(data) ? data.length + ' items' : 'OK'}`);
+            // Test backend connectivity using the health check endpoint
+            const res = await api.get("/health/db");
+            const data = res.data;
+            toast.success(`✅ Backend OK: ${data?.message || 'Connected'}`);
             console.log("API response:", res.data);
         } catch (error) {
             const err = error as AxiosError<{ error?: { message?: string }; message?: string }>;
