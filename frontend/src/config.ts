@@ -19,7 +19,7 @@ VITE_API_URL=https://api.yourdomain.com/api
 // Validate URL format
 try {
     new URL(API_URL);
-} catch (error) {
+} catch {
     console.error('🔥 FATAL ERROR: VITE_API_URL is not a valid URL:', API_URL);
     throw new Error("VITE_API_URL must be a valid URL");
 }

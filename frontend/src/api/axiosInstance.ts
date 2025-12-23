@@ -35,7 +35,7 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as typeof error.config & { _retry?: number };
 
     // Network error (no response from server)
     if (!error.response) {
@@ -62,7 +62,7 @@ api.interceptors.response.use(
     }
 
     // Handle backend error responses
-    const errorData = error.response?.data as any;
+    const errorData = error.response?.data as { error?: { code?: string; message?: string } };
     if (errorData?.error) {
       const backendError = errorData.error as { code?: string; message?: string };
       error.response.data = {
