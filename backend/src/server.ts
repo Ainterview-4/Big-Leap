@@ -101,15 +101,39 @@ app.use(errorHandler);
 /**
  * DEBUG: registered routes
  */
-console.log(
-  "ROUTES:",
-  (app as any)._router?.stack
-    ?.filter((r: any) => r.route)
-    ?.map((r: any) => ({
-      path: r.route.path,
-      methods: Object.keys(r.route.methods),
-    }))
-);
+const getRoutes = (app: any) => {
+  const routes: any[] = [];
+
+  app._router?.stack?.forEach((layer: any) => {
+    if (layer.route) {
+      // Direct route
+      routes.push({
+        path: layer.route.path,
+        methods: Object.keys(layer.route.methods)
+      });
+    } else if (layer.name === 'router' && layer.handle.stack) {
+      // Router middleware - extract base path from regex
+      const basePath = layer.regexp.source
+        .replace('\\/?', '')
+        .replace('(?=\\/|$)', '')
+        .replace(/\\\//g, '/')
+        .replace(/\^/g, '');
+
+      layer.handle.stack.forEach((subLayer: any) => {
+        if (subLayer.route) {
+          routes.push({
+            path: basePath + subLayer.route.path,
+            methods: Object.keys(subLayer.route.methods)
+          });
+        }
+      });
+    }
+  });
+
+  return routes;
+};
+
+console.log("ROUTES:", getRoutes(app));
 
 // Start server
 app.listen(PORT, () => {

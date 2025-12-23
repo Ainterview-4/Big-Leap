@@ -81,6 +81,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/BaseResponse"
 
+  /auth/google:
+    post:
+      summary: Initiate Google OAuth login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redirect_uri:
+                  type: string
+                  description: Frontend callback URL
+      responses:
+        "200":
+          description: OAuth URL returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleOAuthInitResponse"
+
+  /auth/google/callback:
+    get:
+      summary: Handle Google OAuth callback
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Google
+        - in: query
+          name: state
+          schema:
+            type: string
+          description: State parameter for CSRF protection
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
   # ---------------------
   # USER
   # ---------------------
@@ -123,6 +167,8 @@ paths:
   /cv/optimize:
     post:
       summary: Optimize a CV based on job description
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -137,77 +183,203 @@ paths:
               schema:
                 $ref: "#/components/schemas/CVOptimizeResponse"
 
+  /cv/upload:
+    post:
+      summary: Upload a CV file (PDF)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CV file (PDF, max 10MB)
+      responses:
+        "201":
+          description: CV uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CVUploadResponse"
+
+  /cv/:
+    get:
+      summary: List all CVs for authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of user's CVs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CVListResponse"
+
+  /cv/{cvId}:
+    get:
+      summary: Get specific CV by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: cvId
+          required: true
+          schema:
+            type: string
+          description: CV unique identifier
+      responses:
+        "200":
+          description: CV details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CVDetailResponse"
+
   # ---------------------
   # INTERVIEW
   # ---------------------
 
-  /interview/start:
+  /interview/:
     post:
-      summary: Start a new interview session
+      summary: Create a new interview
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InterviewStartRequest"
+              $ref: "#/components/schemas/InterviewCreateRequest"
       responses:
         "201":
-          description: Interview started
+          description: Interview created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterviewStartResponse"
-
-  /interview/answer:
-    post:
-      summary: Submit an answer and get next/follow-up question
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/InterviewAnswerRequest"
-      responses:
-        "200":
-          description: Next question returned
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InterviewAnswerResponse"
-
-  /interview/evaluate:
-    post:
-      summary: Evaluate completed interview session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/InterviewEvaluateRequest"
-      responses:
-        "200":
-          description: Evaluation returned
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InterviewEvaluateResponse"
-
-  /interview/{session_id}:
+                $ref: "#/components/schemas/InterviewCreateResponse"
+    
     get:
-      summary: Fetch summary of old interview session
+      summary: List all interviews for authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of interviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewListResponse"
+
+  /interview/{interviewId}:
+    get:
+      summary: Get interview details
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
-          name: session_id
+          name: interviewId
           required: true
           schema:
             type: string
+          description: Interview unique identifier
       responses:
         "200":
-          description: Interview session summary
+          description: Interview details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InterviewSessionSummary"
+                $ref: "#/components/schemas/InterviewDetailResponse"
+
+  /interview/{interviewId}/sessions:
+    post:
+      summary: Start a new interview session
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: interviewId
+          required: true
+          schema:
+            type: string
+          description: Interview unique identifier
+      responses:
+        "201":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStartResponse"
+
+  /interview/sessions/{sessionId}/answer:
+    post:
+      summary: Submit answer to interview question
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Session unique identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnswerRequest"
+      responses:
+        "200":
+          description: Answer submitted, next question returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResponse"
+
+  /interview/sessions/{sessionId}/evaluate:
+    post:
+      summary: Evaluate interview session
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Session unique identifier
+      responses:
+        "200":
+          description: Evaluation completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResponse"
+
+  /interview/sessions/{sessionId}:
+    get:
+      summary: Get session details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Session unique identifier
+      responses:
+        "200":
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionDetailResponse"
 
   # ---------------------
   # SYSTEM / DEBUG
@@ -378,15 +550,111 @@ components:
                   type: array
                   items: { type: string }
 
-    # INTERVIEW SCHEMAS
-    InterviewStartRequest:
-      type: object
-      required: [cv_text, position]
-      properties:
-        cv_text: { type: string }
-        position: { type: string }
+    CVUploadResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                cv_id: { type: string }
+                filename: { type: string }
+                s3_url: { type: string }
+                uploaded_at: { type: string }
 
-    InterviewStartResponse:
+    CVListResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  filename: { type: string }
+                  uploaded_at: { type: string }
+
+    CVDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                id: { type: string }
+                filename: { type: string }
+                s3_url: { type: string }
+                uploaded_at: { type: string }
+                user_id: { type: string }
+
+    # GOOGLE OAUTH SCHEMAS
+    GoogleOAuthInitResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                auth_url:
+                  type: string
+                  description: Google OAuth authorization URL
+
+
+    # INTERVIEW SCHEMAS
+    InterviewCreateRequest:
+      type: object
+      properties:
+        title: { type: string }
+        position: { type: string }
+        cv_id: { type: string }
+
+    InterviewCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                interview_id: { type: string }
+                title: { type: string }
+                position: { type: string }
+
+    InterviewListResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string }
+                  title: { type: string }
+                  position: { type: string }
+                  created_at: { type: string }
+
+    InterviewDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/BaseResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                id: { type: string }
+                title: { type: string }
+                position: { type: string }
+                cv_id: { type: string }
+                created_at: { type: string }
+
+    SessionStartResponse:
       allOf:
         - $ref: "#/components/schemas/BaseResponse"
         - type: object
@@ -397,14 +665,13 @@ components:
                 session_id: { type: string }
                 first_question: { type: string }
 
-    InterviewAnswerRequest:
+    AnswerRequest:
       type: object
-      required: [session_id, answer]
+      required: [answer]
       properties:
-        session_id: { type: string }
         answer: { type: string }
 
-    InterviewAnswerResponse:
+    AnswerResponse:
       allOf:
         - $ref: "#/components/schemas/BaseResponse"
         - type: object
@@ -416,13 +683,7 @@ components:
                 is_followup: { type: boolean }
                 is_last: { type: boolean }
 
-    InterviewEvaluateRequest:
-      type: object
-      required: [session_id]
-      properties:
-        session_id: { type: string }
-
-    InterviewEvaluateResponse:
+    EvaluationResponse:
       allOf:
         - $ref: "#/components/schemas/BaseResponse"
         - type: object
@@ -441,7 +702,7 @@ components:
                   type: array
                   items: { type: string }
 
-    InterviewSessionSummary:
+    SessionDetailResponse:
       allOf:
         - $ref: "#/components/schemas/BaseResponse"
         - type: object
@@ -450,6 +711,7 @@ components:
               type: object
               properties:
                 session_id: { type: string }
+                interview_id: { type: string }
                 position: { type: string }
                 status: { type: string }
                 started_at: { type: string }
