@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: bigleap-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bigleap_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bigleap_dev_password}
+      POSTGRES_DB: bigleap
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bigleap-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bigleap_user -d bigleap"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Note: Port NOT exposed publicly for security
+    # Only accessible within Docker network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bigleap-backend
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 5001
+      DATABASE_URL: postgresql://bigleap_user:${POSTGRES_PASSWORD:-bigleap_dev_password}@postgres:5432/bigleap?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173,http://localhost:5174}
+      # S3/R2 Configuration (optional for local dev)
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bigleap-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: >
+      sh -c "
+        echo '⏳ Waiting for database...' &&
+        npx prisma migrate deploy &&
+        echo '✅ Migrations complete. Starting server...' &&
+        node dist/server.js
+      "
+
+  # Frontend (Optional - for local testing)
+  # In production, this will be hosted on Cloudflare Pages
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001/api}
+    container_name: bigleap-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - bigleap-network
+    profiles:
+      - full-stack  # Only start with: docker-compose --profile full-stack up
+
+networks:
+  bigleap-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

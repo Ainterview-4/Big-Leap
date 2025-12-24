@@ -67,8 +67,8 @@ app.use("/api/user", userRoutes);
 // ✅ CV
 app.use("/api/cv", cvRoutes);
 
-// ✅ Interview (standardize prefix)
-app.use("/api/interview", interviewRoutes);
+// ✅ Interview (plural to match frontend)
+app.use("/api/interviews", interviewRoutes);
 
 // Health & debug routes
 app.get("/api/health/db", async (_req, res) => {
