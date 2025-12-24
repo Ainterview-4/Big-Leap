@@ -17,6 +17,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SettingsVoiceIcon from "@mui/icons-material/SettingsVoice";
 import { useNavigate } from "react-router-dom";
 import { createInterview, startInterviewSession } from "../../services/interviewApi";
+import { AxiosError } from "axios";
 
 const InterviewStart: React.FC = () => {
   const navigate = useNavigate();
@@ -42,17 +43,38 @@ const InterviewStart: React.FC = () => {
         // company: "Self-Practice",
       };
 
+      console.log("Creating interview...", interviewParams);
       const interviewRes = await createInterview(interviewParams);
-      const interview = interviewRes.data;
+      console.log("Interview response:", interviewRes);
+
+      // Axios interceptor unwraps: response.data.data → response.data
+      // interviewApi.ts returns: res.data (the unwrapped object)
+      // So interviewRes IS the interview object directly
+      const interview = interviewRes;
+
+      console.log("Extracted interview:", interview);
 
       if (!interview?.id) {
-        throw new Error("Failed to create interview");
+        console.error("No interview ID found:", interview);
+        throw new Error("Failed to create interview - no ID returned");
       }
 
       // 2. Start Session
-      // TODO: If we have a selected CV, pass it here. For now, sending undefined/null.
+      console.log("Starting session for interview:", interview.id);
       const sessionRes = await startInterviewSession(interview.id);
-      const session = sessionRes.data;
+      console.log("Session response:", sessionRes);
+
+      // Same: sessionRes IS the session object directly
+      const session = sessionRes;
+
+      console.log("Extracted session:", session);
+
+      if (!session?.id) {
+        console.error("No session ID found:", session);
+        throw new Error("Failed to start session - no ID returned");
+      }
+
+      console.log("✅ Session created successfully:", session.id);
 
       // 3. Navigate
       navigate("/interview/qna", {
@@ -61,13 +83,15 @@ const InterviewStart: React.FC = () => {
           experience,
           focusArea,
           interviewId: interview.id,
-          sessionId: session?.id,
+          sessionId: session.id,
           session
         }
       });
-    } catch (error) {
-      console.error("Start Error:", error);
-      // Could add toast notification here
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ error?: { message?: string } }>;
+      console.error("❌ Start Error:", error);
+      console.error("Error details:", error.response?.data || error.message);
+      alert(`Failed to start interview session: ${error.response?.data?.error?.message || error.message}`);
     } finally {
       setIsLoading(false);
     }

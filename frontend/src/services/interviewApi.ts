@@ -15,12 +15,12 @@ export interface StartSessionParams {
 }
 
 export const createInterview = async (params: CreateInterviewParams) => {
-    const res = await api.post("/api/interviews", params);
+    const res = await api.post("/interviews", params);
     return res.data; // { status: "success", data: interview }
 };
 
 export const startInterviewSession = async (interviewId: string, cvId?: string) => {
-    const res = await api.post(`/api/interviews/${interviewId}/sessions`, {
+    const res = await api.post(`/interviews/${interviewId}/sessions`, {
         cvId: cvId ?? null,
     });
 
@@ -28,16 +28,16 @@ export const startInterviewSession = async (interviewId: string, cvId?: string) 
 };
 
 export const answerSession = async (sessionId: string, answer: string) => {
-    const res = await api.post(`/api/interviews/sessions/${sessionId}/answer`, { answer });
+    const res = await api.post(`/interviews/sessions/${sessionId}/answer`, { answer });
     return res.data; // { status: "success", data: { sessionId, questionIndex, nextQuestion } }
 };
 
 export const evaluateSession = async (sessionId: string) => {
-    const res = await api.post(`/api/interviews/sessions/${sessionId}/evaluate`);
+    const res = await api.post(`/interviews/sessions/${sessionId}/evaluate`);
     return res.data; // { status: "success", data: { score, feedback, ... } }
 };
 
 export const getSession = async (sessionId: string) => {
-    const res = await api.get(`/api/interviews/sessions/${sessionId}`);
+    const res = await api.get(`/interviews/sessions/${sessionId}`);
     return res.data; // { status: "success", data: session }
 };
