@@ -17,6 +17,7 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SettingsVoiceIcon from "@mui/icons-material/SettingsVoice";
 import { useNavigate } from "react-router-dom";
 import { createInterview, startInterviewSession } from "../../services/interviewApi";
+import { AxiosError } from "axios";
 
 const InterviewStart: React.FC = () => {
   const navigate = useNavigate();
@@ -86,7 +87,8 @@ const InterviewStart: React.FC = () => {
           session
         }
       });
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ error?: { message?: string } }>;
       console.error("❌ Start Error:", error);
       console.error("Error details:", error.response?.data || error.message);
       alert(`Failed to start interview session: ${error.response?.data?.error?.message || error.message}`);
