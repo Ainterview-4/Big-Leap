@@ -10,7 +10,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:migrate": "prisma migrate dev --name init"
+    "db:migrate": "prisma migrate dev --name init",
+    "studio:docker": "DATABASE_URL='postgresql://bigleap_user:bigleap_dev_password@localhost:5433/bigleap?schema=public' npx prisma studio"
   },
   "keywords": [],
   "author": "",
