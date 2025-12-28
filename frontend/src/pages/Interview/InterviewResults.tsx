@@ -17,13 +17,14 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getSession } from "../../services/interviewApi";
+import type { InterviewMessage, InterviewSession } from "../../api/types";
 
 const InterviewResults: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { sessionId } = location.state || {};
+  const { sessionId } = (location.state as { sessionId: string } | null) || {};
 
-  const [session, setSession] = React.useState<any>(null);
+  const [session, setSession] = React.useState<InterviewSession | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -169,14 +170,16 @@ const InterviewResults: React.FC = () => {
               Answer Breakdown
             </Typography>
             <Paper elevation={0} sx={{ borderRadius: 4, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-              {session.messages
-                .filter((m: any) => m.role === "user")
-                .map((answer: any, index: number) => {
-                  const answerIndex = session.messages.indexOf(answer);
-                  const question = session.messages[answerIndex - 1];
+              {session?.messages && session.messages
+                .filter((m: InterviewMessage) => m.role === "user")
+                .map((answer: InterviewMessage, index: number) => {
+                  // We blocked on session.messages existing above
+                  const allMessages = session.messages!;
+                  const answerIndex = allMessages.indexOf(answer);
+                  const question = allMessages[answerIndex - 1];
 
                   // Safely extract grade data
-                  const gradeData = answer.metadata?.grade;
+                  const gradeData = answer.metadata?.grade as string | number | { score?: string | number; grade?: string | number; short_feedback?: string } | undefined;
                   let displayScore = "-";
                   let feedback = null;
                   let isGoodGrade = false;

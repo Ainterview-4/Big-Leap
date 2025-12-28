@@ -35,7 +35,7 @@ export interface InterviewMessage {
     id: string;
     role: "user" | "assistant" | "system";
     content: string;
-    metadata?: any;
+    metadata?: Record<string, unknown> | null;
     createdAt: string;
 }
 
@@ -49,6 +49,7 @@ export interface InterviewSession {
     endedAt?: string | null;
     currentQuestion: number;
     messages?: InterviewMessage[];
+    interview?: Interview;
 }
 
 export interface Interview {

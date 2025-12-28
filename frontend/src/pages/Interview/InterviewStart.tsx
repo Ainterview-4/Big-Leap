@@ -120,7 +120,7 @@ const InterviewStart: React.FC = () => {
     } catch (err: unknown) {
       const error = err as AxiosError<{ error?: { message?: string } }>;
       console.error("❌ Start Error:", error);
-      alert(`Failed to start interview session: ${error.response?.data?.error?.message || (error as any).message}`);
+      alert(`Failed to start interview session: ${error.response?.data?.error?.message || (error as Error).message}`);
     } finally {
       setIsLoading(false);
     }

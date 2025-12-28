@@ -89,9 +89,10 @@ const InterviewQnA: React.FC = () => {
         console.warn("No next question returned", nextQ);
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error submitting answer:", err);
-      if (err.response?.data?.error?.code === "INTERVIEW_LIMIT_REACHED") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((err as any).response?.data?.error?.code === "INTERVIEW_LIMIT_REACHED") {
         alert("Interview limit reached. Finalizing...");
         handleFinish();
       } else {

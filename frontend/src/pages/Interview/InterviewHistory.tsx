@@ -38,9 +38,9 @@ const InterviewHistory: React.FC = () => {
                 // Based on controller: return ok(res, interviews) -> { status: "success", data: interviews }
                 // So here response might be the full object or just data depending on previous usage.
                 // Let's safe check.
-                const data = (response as any).data || response;
+                const data: unknown = (response as { data: unknown }).data || response;
                 if (Array.isArray(data)) {
-                    setInterviews(data);
+                    setInterviews(data as Interview[]);
                 }
             } catch (err) {
                 console.error("Failed to load history", err);
