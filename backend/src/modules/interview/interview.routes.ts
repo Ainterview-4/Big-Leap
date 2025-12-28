@@ -6,7 +6,7 @@ import {
     listMyInterviews,
     getInterviewById,
     answerInterview,
-    evaluateInterview,
+    finalizeInterview,
     getSessionById,
 } from "./interview.controller";
 
@@ -25,7 +25,7 @@ router.get("/:interviewId", authGuard, getInterviewById);
 router.post("/:interviewId/sessions", authGuard, startSession);
 
 router.post("/sessions/:sessionId/answer", authGuard, answerInterview);
-router.post("/sessions/:sessionId/evaluate", authGuard, evaluateInterview);
+router.post("/sessions/:sessionId/finalize", authGuard, finalizeInterview);
 router.get("/sessions/:sessionId", authGuard, getSessionById);
 
 export default router;
