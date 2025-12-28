@@ -30,3 +30,37 @@ export interface CV {
     atsScore?: number | null;
     structuredData?: StructuredData | null;
 }
+
+export interface InterviewMessage {
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: string;
+    metadata?: any;
+    createdAt: string;
+}
+
+export interface InterviewSession {
+    id: string;
+    interviewId: string;
+    status: "STARTED" | "FINISHED";
+    score?: number | null;
+    feedback?: string | null;
+    createdAt: string;
+    endedAt?: string | null;
+    currentQuestion: number;
+    messages?: InterviewMessage[];
+}
+
+export interface Interview {
+    id: string;
+    userId: string;
+    title: string;
+    role?: string | null;
+    company?: string | null;
+    level?: string | null;
+    difficulty?: string | null;
+    status: "DRAFT" | "COMPLETED";
+    createdAt: string;
+    updatedAt: string;
+    sessions?: InterviewSession[];
+}
