@@ -3,20 +3,21 @@ import { Container, Grid, Paper, Typography, Box, useTheme, alpha } from "@mui/m
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SchoolIcon from "@mui/icons-material/School";
 import { useNavigate } from "react-router-dom";
+import type { CV } from "../api/types";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
 
 
-    const [cvs, setCvs] = React.useState<any[]>([]);
+    const [cvs, setCvs] = React.useState<CV[]>([]);
 
     React.useEffect(() => {
         const fetchCvs = async () => {
             try {
                 const response = await import("../api/cv").then(mod => mod.listMyCVs());
                 // Handle Axios unwrap
-                const data = (response as any).data || response;
+                const data = ((response as { data?: unknown }).data || response) as CV[];
                 if (Array.isArray(data)) {
                     setCvs(data);
                 }
@@ -27,7 +28,7 @@ const Dashboard: React.FC = () => {
         fetchCvs();
     }, []);
 
-    const getStatusChip = (cv: any) => {
+    const getStatusChip = (cv: CV) => {
         if (cv.optimizedPdfUrl) return <Box sx={{ bgcolor: 'success.light', color: 'success.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>OPTIMIZED</Box>;
         if (cv.analysisResult) return <Box sx={{ bgcolor: 'info.light', color: 'info.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>ANALYZED</Box>;
         return <Box sx={{ bgcolor: 'warning.light', color: 'warning.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>UPLOADED</Box>;

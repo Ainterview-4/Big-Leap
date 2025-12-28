@@ -31,6 +31,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import { useNavigate, useLocation } from "react-router-dom";
 import { optimizeCVRequest } from "../../api/cv";
 import { toast } from "react-toastify";
+import type { CV } from "../../api/types";
 
 const CVOptimize: React.FC = () => {
     const navigate = useNavigate();
@@ -51,13 +52,13 @@ const CVOptimize: React.FC = () => {
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
     // Get CV ID from navigation state
-    const cvData = (location.state as any)?.cvData;
+    const cvData = (location.state as { cvData?: CV; force?: boolean })?.cvData;
     const analysis = cvData?.analysisResult || {};
 
     // Safely extract initial issues (or default to empty)
     const initialIssues: Array<{ text: string; type: "error" | "warning" | "info" }> = [];
     if (analysis.issues && Array.isArray(analysis.issues)) {
-        analysis.issues.forEach((issue: any) => {
+        analysis.issues.forEach((issue) => {
             initialIssues.push({ type: "warning", text: issue.issue || issue.description || JSON.stringify(issue) });
         });
     } else if (analysis.missingKeywords && Array.isArray(analysis.missingKeywords)) {
@@ -68,7 +69,7 @@ const CVOptimize: React.FC = () => {
 
     // Safety Check: If already optimized and not forced, show success state immediately
     React.useEffect(() => {
-        const force = (location.state as any)?.force;
+        const force = (location.state as { force?: boolean })?.force;
         if (cvData?.optimizedPdfUrl && !force) {
             console.log("Skipping new optimization - using existing.");
             setOptimized(true);
@@ -92,7 +93,7 @@ const CVOptimize: React.FC = () => {
                 jobDescription: jobDescription.trim() || undefined,
                 force: isRetry
             });
-            const data = (response as any).data || response;
+            const data = (response as { data: { optimizedPdfUrl: string } }).data || response;
 
             setOptimized(true);
             setIsRetry(false); // Reset retry state

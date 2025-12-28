@@ -21,6 +21,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import { useNavigate, useLocation } from "react-router-dom";
 import { analyzeCVRequest } from "../../api/cv";
 import { toast } from "react-toastify";
+import type { AnalysisResult, CV } from "../../api/types";
 import { CircularProgress } from "@mui/material";
 
 // Simple Circular Progress Component if recharts is not desired
@@ -65,11 +66,11 @@ const CVResult: React.FC = () => {
   const theme = useTheme();
   const filename = location.state?.filename || "Uploaded Resume";
 
-  const receivedCv = location.state?.cvData;
+  const receivedCv: CV | undefined = (location.state as { cvData?: CV })?.cvData;
   const structured = receivedCv?.structuredData;
 
   const [analyzing, setAnalyzing] = React.useState(false);
-  const [analysisResult, setAnalysisResult] = React.useState<any>(null);
+  const [analysisResult, setAnalysisResult] = React.useState<AnalysisResult | null>(null);
   const [atsScore, setAtsScore] = React.useState<number | null>(null);
   const analysisAttempted = React.useRef(false);
 
@@ -83,7 +84,7 @@ const CVResult: React.FC = () => {
         try {
           setAnalyzing(true);
           const res = await analyzeCVRequest(receivedCv.id);
-          const data = (res as any).data || res;
+          const data = ((res as { data?: unknown }).data || res) as { analysis: AnalysisResult; atsScore: number };
           setAnalysisResult(data.analysis);
           setAtsScore(data.atsScore);
         } catch (error) {
@@ -96,7 +97,7 @@ const CVResult: React.FC = () => {
       };
       fetchAnalysis();
     }
-  }, [receivedCv]);
+  }, [receivedCv, analysisResult, analyzing]);
 
   // Merge data sources: Analysis API > Upload structured data > Mocks
   const score = atsScore ?? (structured ? 0 : 0);

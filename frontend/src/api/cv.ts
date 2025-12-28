@@ -1,10 +1,12 @@
 import api from "./axiosInstance";
 
+import type { AnalysisResult, CV, OptimizationResult } from "./types";
+
 export const uploadCVRequest = (file: File) => {
     const formData = new FormData();
     formData.append("file", file); // Changed "cv" to "file" to match backend
 
-    return api.post<{ message: string; file: string }>("/cv/upload", formData, {
+    return api.post<CV>("/cv/upload", formData, {
         headers: {
             "Content-Type": "multipart/form-data",
         },
@@ -14,7 +16,7 @@ export const uploadCVRequest = (file: File) => {
 
 export const analyzeCVRequest = (cvId: string) => {
     return api.post<{
-        analysis: any;
+        analysis: AnalysisResult;
         atsScore: number;
         cached: boolean;
     }>(`/cv/${cvId}/analyze`, {}, {
@@ -23,16 +25,11 @@ export const analyzeCVRequest = (cvId: string) => {
 };
 
 export const optimizeCVRequest = (data: { cvId: string; jobDescription?: string; force?: boolean }) => {
-    return api.post<{
-        optimizedData: any;
-        optimizedPdfUrl: string;
-        reused: boolean;
-        atsScore: number | null;
-    }>("/cv/optimize", data, {
+    return api.post<OptimizationResult & { reused: boolean }>("/cv/optimize", data, {
         timeout: 180000 // 3 minutes for generation
     });
 };
 
 export const listMyCVs = () => {
-    return api.get<any[]>("/cv");
+    return api.get<CV[]>("/cv");
 };
