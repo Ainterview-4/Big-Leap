@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import InterviewStart from "./pages/Interview/InterviewStart";
 import InterviewQnA from "./pages/Interview/InterviewQnA";
 import InterviewResults from "./pages/Interview/InterviewResults";
+import InterviewHistory from "./pages/Interview/InterviewHistory";
 import Profile from "./pages/Settings/Profile";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -62,6 +63,7 @@ const AppRouter: React.FC = () => {
           <Route path="/interview/start" element={<InterviewStart />} />
           <Route path="/interview/qna" element={<InterviewQnA />} />
           <Route path="/interview/results" element={<InterviewResults />} />
+          <Route path="/interview/history" element={<InterviewHistory />} />
 
           {/* SETTINGS */}
           <Route path="/profile" element={<Profile />} />

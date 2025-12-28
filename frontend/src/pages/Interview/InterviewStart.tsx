@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Paper,
@@ -17,16 +17,46 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import SettingsVoiceIcon from "@mui/icons-material/SettingsVoice";
 import { useNavigate } from "react-router-dom";
 import { createInterview, startInterviewSession } from "../../services/interviewApi";
+import { listMyCVs } from "../../api/cv";
 import { AxiosError } from "axios";
+import type { CV } from "../../api/types";
 
 const InterviewStart: React.FC = () => {
   const navigate = useNavigate();
 
   // State for form fields
-  const [role, setRole] = useState("Frontend Developer");
+  const [role, setRole] = useState("Software Engineer");
+  const [company, setCompany] = useState("Google");
   const [experience, setExperience] = useState("Mid-Level");
-  const [focusArea, setFocusArea] = useState("Technical Skills");
+  const [difficulty, setDifficulty] = useState("Medium");
+
+  const [cvList, setCvList] = useState<CV[]>([]);
+  const [selectedCvId, setSelectedCvId] = useState<string>("");
+
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load CVs on mount
+  useEffect(() => {
+    const loadCVs = async () => {
+      try {
+        const res = await listMyCVs();
+        // Adjust based on your API response wrapper
+        // listMyCVs returns Promise<AxiosResponse<CV[]>> BUT our axiosInstance might intercept.
+        // Let's assume standard axios response
+        const data = res.data;
+        if (Array.isArray(data)) {
+          setCvList(data);
+          // Auto-select first CV if available
+          if (data.length > 0) {
+            setSelectedCvId(data[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load CVs", err);
+      }
+    };
+    loadCVs();
+  }, []);
 
   /* 
    * Updated handleStart to integrate with backend API
@@ -35,12 +65,19 @@ const InterviewStart: React.FC = () => {
     try {
       setIsLoading(true);
 
+      if (!selectedCvId) {
+        alert("Please upload or select a CV first.");
+        return;
+      }
+
       // 1. Create Interview
       const interviewParams = {
-        title: `${role} Interview`,
+        title: `${role} Interview at ${company}`,
         role,
         level: experience,
-        // company: "Self-Practice",
+        difficulty,
+        company,
+        cvId: selectedCvId
       };
 
       console.log("Creating interview...", interviewParams);
@@ -48,14 +85,9 @@ const InterviewStart: React.FC = () => {
       console.log("Interview response:", interviewRes);
 
       // Axios interceptor unwraps: response.data.data → response.data
-      // interviewApi.ts returns: res.data (the unwrapped object)
-      // So interviewRes IS the interview object directly
       const interview = interviewRes;
 
-      console.log("Extracted interview:", interview);
-
       if (!interview?.id) {
-        console.error("No interview ID found:", interview);
         throw new Error("Failed to create interview - no ID returned");
       }
 
@@ -64,34 +96,31 @@ const InterviewStart: React.FC = () => {
       const sessionRes = await startInterviewSession(interview.id);
       console.log("Session response:", sessionRes);
 
-      // Same: sessionRes IS the session object directly
-      const session = sessionRes;
+      // Backend returns { sessionId, question } inside sessionRes
+      // sessionRes is likely { status: "success", data: { sessionId, question } } OR just data if unwrapped
+      const sessionData = sessionRes;
 
-      console.log("Extracted session:", session);
-
-      if (!session?.id) {
-        console.error("No session ID found:", session);
+      if (!sessionData?.sessionId) {
         throw new Error("Failed to start session - no ID returned");
       }
 
-      console.log("✅ Session created successfully:", session.id);
+      console.log("✅ Session created successfully:", sessionData.sessionId);
 
       // 3. Navigate
       navigate("/interview/qna", {
         state: {
           role,
           experience,
-          focusArea,
+          company,
           interviewId: interview.id,
-          sessionId: session.id,
-          session
+          sessionId: sessionData.sessionId, // Correct ID
+          session: sessionData // Pass full object containing initial question
         }
       });
     } catch (err: unknown) {
       const error = err as AxiosError<{ error?: { message?: string } }>;
       console.error("❌ Start Error:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      alert(`Failed to start interview session: ${error.response?.data?.error?.message || error.message}`);
+      alert(`Failed to start interview session: ${error.response?.data?.error?.message || (error as any).message}`);
     } finally {
       setIsLoading(false);
     }
@@ -136,8 +165,34 @@ const InterviewStart: React.FC = () => {
 
         <Box component="form" noValidate autoComplete="off">
           <Grid container spacing={4}>
-            {/* Role Selection */}
+            {/* CV Selection */}
             <Grid size={{ xs: 12 }}>
+              <TextField
+                select
+                label="Select CV"
+                fullWidth
+                value={selectedCvId}
+                onChange={(e) => setSelectedCvId(e.target.value)}
+                variant="outlined"
+                helperText="Select the CV you want the interviewer to focus on"
+                error={cvList.length === 0}
+              >
+                {cvList.length > 0 ? (
+                  cvList.map((cv) => (
+                    <MenuItem key={cv.id} value={cv.id}>
+                      {cv.fileName}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="">
+                    No CVs found. Please upload one first.
+                  </MenuItem>
+                )}
+              </TextField>
+            </Grid>
+
+            {/* Role Selection */}
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 select
                 label="Target Role"
@@ -147,12 +202,46 @@ const InterviewStart: React.FC = () => {
                 variant="outlined"
                 helperText="Select the job position you are applying for"
               >
+                <MenuItem value="Software Engineer">Software Engineer</MenuItem>
                 <MenuItem value="Frontend Developer">Frontend Developer</MenuItem>
                 <MenuItem value="Backend Developer">Backend Developer</MenuItem>
                 <MenuItem value="Full Stack Developer">Full Stack Developer</MenuItem>
                 <MenuItem value="DevOps Engineer">DevOps Engineer</MenuItem>
                 <MenuItem value="Product Manager">Product Manager</MenuItem>
-                <MenuItem value="UI/UX Designer">UI/UX Designer</MenuItem>
+                <MenuItem value="Data Scientist">Data Scientist</MenuItem>
+              </TextField>
+            </Grid>
+
+            {/* Company Selection */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                select
+                label="Target Company"
+                fullWidth
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                variant="outlined"
+                helperText="Select the company style you want to practice"
+              >
+                <MenuItem value="Google">Google</MenuItem>
+                <MenuItem value="Amazon">Amazon</MenuItem>
+                <MenuItem value="Meta">Meta</MenuItem>
+                <MenuItem value="Microsoft">Microsoft</MenuItem>
+                <MenuItem value="IBM">IBM</MenuItem>
+                <MenuItem value="Cisco">Cisco</MenuItem>
+                <MenuItem value="Apple">Apple</MenuItem>
+                <MenuItem value="Netflix">Netflix</MenuItem>
+                <MenuItem value="Tesla">Tesla</MenuItem>
+                <MenuItem value="OpenAI">OpenAI</MenuItem>
+                <MenuItem value="Oracle">Oracle</MenuItem>
+                <MenuItem value="Salesforce">Salesforce</MenuItem>
+                <MenuItem value="Uber">Uber</MenuItem>
+                <MenuItem value="Adobe">Adobe</MenuItem>
+                <MenuItem value="Spotify">Spotify</MenuItem>
+                <MenuItem value="Airbnb">Airbnb</MenuItem>
+                <MenuItem value="Intel">Intel</MenuItem>
+                <MenuItem value="Nvidia">Nvidia</MenuItem>
+                <MenuItem value="General">General / Other</MenuItem>
               </TextField>
             </Grid>
 
@@ -175,20 +264,19 @@ const InterviewStart: React.FC = () => {
               </FormControl>
             </Grid>
 
-            {/* Focus Area */}
+            {/* Difficulty */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel id="focus-label">Focus Area</InputLabel>
+                <InputLabel id="difficulty-label">Difficulty</InputLabel>
                 <Select
-                  labelId="focus-label"
-                  value={focusArea}
-                  label="Focus Area"
-                  onChange={(e: SelectChangeEvent) => setFocusArea(e.target.value)}
+                  labelId="difficulty-label"
+                  value={difficulty}
+                  label="Difficulty"
+                  onChange={(e: SelectChangeEvent) => setDifficulty(e.target.value)}
                 >
-                  <MenuItem value="Technical Skills">Technical Coding Questions</MenuItem>
-                  <MenuItem value="System Design">System Design & Architecture</MenuItem>
-                  <MenuItem value="Behavioral">Behavioral (Culture Fit)</MenuItem>
-                  <MenuItem value="Mixed">Mixed (All Categories)</MenuItem>
+                  <MenuItem value="Easy">Easy</MenuItem>
+                  <MenuItem value="Medium">Medium</MenuItem>
+                  <MenuItem value="Hard">Hard</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -200,7 +288,7 @@ const InterviewStart: React.FC = () => {
               size="large"
               color="secondary"
               onClick={handleStart}
-              disabled={isLoading}
+              disabled={isLoading || !selectedCvId}
               startIcon={isLoading ? null : <PlayArrowIcon />}
               sx={{
                 px: 8,

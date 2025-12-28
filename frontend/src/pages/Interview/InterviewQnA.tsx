@@ -7,13 +7,11 @@ import {
   Button,
   TextField,
   LinearProgress,
-  Chip,
   IconButton,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import SendIcon from "@mui/icons-material/Send";
 import MicIcon from "@mui/icons-material/Mic";
-import TimerIcon from "@mui/icons-material/Timer";
 import { answerSession, evaluateSession } from "../../services/interviewApi";
 
 const InterviewQnA: React.FC = () => {
@@ -24,84 +22,81 @@ const InterviewQnA: React.FC = () => {
   const { role, experience, focusArea, sessionId, session } = location.state || {};
 
   // Local State
-  const [currentQuestionText, setCurrentQuestionText] = useState<string>("");
+  const [currentQuestion, setCurrentQuestion] = useState<{ id: string; text: string } | null>(null);
   const [questionIndex, setQuestionIndex] = useState<number>(1);
   const [answer, setAnswer] = useState("");
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes per question
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize from passed session data or fetch
+  // Initialize from passed session data
   useEffect(() => {
     if (!sessionId) {
-      // Fallback or redirect if no session
-      console.warn("No sessionId provided, redirecting...");
       navigate("/interview/start");
       return;
     }
 
-    if (session) {
-      // We might have the initial question in session data if backend returns it on create
-      // But typically create returns the session object. 
-      // We might need to fetch the *first* question text if it's not in the 'create' response or generated yet.
-      // Actually, creating a session usually implies starting. 
-      // Let's assume the backend 'answer' logic generates the *next* question.
-      // What about the FIRST question?
-      // If the backend doesn't provide a first question on Create, we might need a workaround or an initial "start" trigger.
-      // Looking at controller: create session -> status IN_PROGRESS. No messages yet? 
-      // We probably need to send an empty answer or a "start" signal to get the first question, 
-      // OR the backend createSession should have generated the first question.
-      // Let's check backend logic... 
-      // Backend 'startSession' just creates the record. It doesn't seem to generate a message.
-      // 'answerInterview' generates the next question.
+    if (session?.question) {
+      // Backend returns "question_text" or "text" or "question"
+      const q = session.question;
+      const text = q.text || q.question_text || q.question;
+      const id = q.id || q.question_id;
+
+      if (text && id) {
+        setCurrentQuestion({ id, text });
+      }
+    } else {
+      // Only if we don't have initial question (unexpected for new flow)
+      // Fallback or loading state
+      setCurrentQuestion({ id: "init", text: "Ready to start the interview?" });
     }
-
-    // TEMPORARY: If no question exists, we simulate "starting" by asking the backend for a question 
-    // or we just display a welcome message and hit "Next" to get the first real question?
-    // Let's assume for now we call 'answer' with a "Hello" or "Ready" to trigger the first question 
-    // IF the conversation history is empty.
-    // Ideally we should Fetch the session details to see if messages exist.
-
-    // Setting a default starting prompt if none exists
-    setCurrentQuestionText("Please introduce yourself and tell us about your experience as a " + (role || "developer") + ".");
-
-  }, [sessionId, session, navigate, role]);
-
-  // Timer Logic
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [questionIndex]); // Reset on new question
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
+  }, [sessionId, session, navigate]);
 
   const handleNext = async () => {
-    if (!sessionId) return;
+    if (!sessionId || !currentQuestion) return;
 
     try {
       setIsLoading(true);
-      // Send answer to backend
-      const res = await answerSession(sessionId, answer);
-      const data = res.data; // { sessionId, questionIndex, nextQuestion }
 
-      if (data && data.nextQuestion) {
-        setCurrentQuestionText(data.nextQuestion);
-        setQuestionIndex(data.questionIndex || questionIndex + 1);
+      const payload = {
+        previous_question_id: currentQuestion.id,
+        previous_question: currentQuestion.text,
+        previous_answer: answer
+      };
+
+      // Send answer to backend
+      const res = await answerSession(sessionId, payload);
+      // Backend returns the NEXT question object directly (or inside data)
+      const nextQ = res;
+
+      if (nextQ && (nextQ.question_text || nextQ.text)) {
+        const text = nextQ.question_text || nextQ.text;
+        const id = nextQ.id || nextQ.question_id;
+
+        setCurrentQuestion({ id, text });
+        setQuestionIndex(prev => prev + 1);
         setAnswer("");
-        setTimeLeft(120);
-      } else {
-        // No next question? Maybe finished?
+
+        if (nextQ.category === "final") {
+          // Optional: Auto-finish or show a "Finalize" button
+          // For now, let's just let them continue or manually finish if UI allows
+          // Or ideally, redirect to results
+          handleFinish();
+        }
+
+      } else if (nextQ?.category === 'final') {
         handleFinish();
+      } else {
+        // Fallback
+        console.warn("No next question returned", nextQ);
       }
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting answer:", err);
-      // Handle error
+      if (err.response?.data?.error?.code === "INTERVIEW_LIMIT_REACHED") {
+        alert("Interview limit reached. Finalizing...");
+        handleFinish();
+      } else {
+        alert("Failed to submit answer. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -137,13 +132,6 @@ const InterviewQnA: React.FC = () => {
             {experience || "General"} • {focusArea || "General"}
           </Typography>
         </Box>
-        <Chip
-          icon={<TimerIcon />}
-          label={formatTime(timeLeft)}
-          color={timeLeft < 30 ? "error" : "default"}
-          variant="outlined"
-          sx={{ fontSize: "1rem", px: 1 }}
-        />
       </Box>
 
       {/* Progress Bar (Mocked for continuous flow) */}
@@ -172,7 +160,7 @@ const InterviewQnA: React.FC = () => {
         }}
       >
         <Typography variant="h5" fontWeight="medium" gutterBottom>
-          {currentQuestionText || "Loading question..."}
+          {currentQuestion?.text || "Loading question..."}
         </Typography>
 
         <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic", mt: 2, display: "block" }}>

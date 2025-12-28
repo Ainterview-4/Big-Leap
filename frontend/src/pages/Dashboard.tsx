@@ -161,50 +161,68 @@ const Dashboard: React.FC = () => {
                                 }
                             },
                         }}
-                        onClick={() => navigate("/interview/start")}
                     >
-                        {/* Decorative Background Blob */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                top: -50,
-                                left: -50,
-                                width: 150,
-                                height: 150,
-                                borderRadius: "50%",
-                                background: alpha(theme.palette.secondary.main, 0.1),
-                                filter: "blur(40px)",
-                                zIndex: 0,
-                            }}
-                        />
+                        <Box onClick={() => navigate("/interview/start")}>
+                            {/* Decorative Background Blob */}
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    top: -50,
+                                    left: -50,
+                                    width: 150,
+                                    height: 150,
+                                    borderRadius: "50%",
+                                    background: alpha(theme.palette.secondary.main, 0.1),
+                                    filter: "blur(40px)",
+                                    zIndex: 0,
+                                }}
+                            />
 
-                        <Box
-                            className="icon-box"
-                            sx={{
-                                width: 90,
-                                height: 90,
-                                borderRadius: "24px",
-                                bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                                color: "secondary.main",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                margin: "0 auto",
-                                mb: 4,
-                                transition: "all 0.3s ease",
-                                position: "relative",
-                                zIndex: 1,
-                            }}
-                        >
-                            <SchoolIcon sx={{ fontSize: 40 }} />
+                            <Box
+                                className="icon-box"
+                                sx={{
+                                    width: 90,
+                                    height: 90,
+                                    borderRadius: "24px",
+                                    bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                                    color: "secondary.main",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: "0 auto",
+                                    mb: 4,
+                                    transition: "all 0.3s ease",
+                                    position: "relative",
+                                    zIndex: 1,
+                                }}
+                            >
+                                <SchoolIcon sx={{ fontSize: 40 }} />
+                            </Box>
+                            <Box position="relative" zIndex={1}>
+                                <Typography variant="h4" fontWeight="bold" gutterBottom color="text.primary">
+                                    Interview Prep
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7, mb: 3 }}>
+                                    Simulate real interview scenarios. Practice technical and behavioral questions with a timer and get results.
+                                </Typography>
+                            </Box>
                         </Box>
-                        <Box position="relative" zIndex={1}>
-                            <Typography variant="h4" fontWeight="bold" gutterBottom color="text.primary">
-                                Interview Prep
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                                Simulate real interview scenarios. Practice technical and behavioral questions with a timer and get results.
-                            </Typography>
+
+                        <Box position="relative" zIndex={2} display="flex" justifyContent="center" gap={2}>
+                            <Box
+                                component="button"
+                                onClick={(e) => { e.stopPropagation(); navigate("/interview/start"); }}
+                                sx={{ border: 0, bgcolor: 'secondary.main', color: 'white', px: 3, py: 1, borderRadius: 2, cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                Start New
+                            </Box>
+                            <Box
+                                component="button"
+                                onClick={(e) => { e.stopPropagation(); navigate("/interview/history"); }}
+                                sx={{ border: "1px solid", borderColor: "secondary.main", bgcolor: 'transparent', color: 'secondary.main', px: 3, py: 1, borderRadius: 2, cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                History
+                            </Box>
                         </Box>
                     </Paper>
                 </Grid>
