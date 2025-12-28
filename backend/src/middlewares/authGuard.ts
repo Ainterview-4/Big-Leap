@@ -14,10 +14,13 @@ declare global {
 
 export function authGuard(req: Request, res: Response, next: NextFunction) {
     try {
+        console.log("Headers:", req.headers);
         const authHeader = String(req.headers.authorization || "");
+        console.log("Auth Header received:", "|" + authHeader + "|");
 
         // Standard: Authorization: Bearer <token>
         if (!authHeader.startsWith("Bearer ")) {
+            console.log("Failed startsWith check");
             return fail(res, "UNAUTHORIZED", "Missing or invalid Authorization header", null, 401);
         }
 

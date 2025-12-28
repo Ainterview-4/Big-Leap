@@ -3,10 +3,36 @@ import { Container, Grid, Paper, Typography, Box, useTheme, alpha } from "@mui/m
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SchoolIcon from "@mui/icons-material/School";
 import { useNavigate } from "react-router-dom";
+import type { CV } from "../api/types";
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
+
+
+    const [cvs, setCvs] = React.useState<CV[]>([]);
+
+    React.useEffect(() => {
+        const fetchCvs = async () => {
+            try {
+                const response = await import("../api/cv").then(mod => mod.listMyCVs());
+                // Handle Axios unwrap
+                const data = ((response as { data?: unknown }).data || response) as CV[];
+                if (Array.isArray(data)) {
+                    setCvs(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch CVs", error);
+            }
+        };
+        fetchCvs();
+    }, []);
+
+    const getStatusChip = (cv: CV) => {
+        if (cv.optimizedPdfUrl) return <Box sx={{ bgcolor: 'success.light', color: 'success.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>OPTIMIZED</Box>;
+        if (cv.analysisResult) return <Box sx={{ bgcolor: 'info.light', color: 'info.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>ANALYZED</Box>;
+        return <Box sx={{ bgcolor: 'warning.light', color: 'warning.dark', px: 1, borderRadius: 1, fontSize: '0.75rem', fontWeight: 'bold' }}>UPLOADED</Box>;
+    };
 
     return (
         <Container maxWidth="lg" sx={{ mt: { xs: 4, md: 8 }, mb: 8 }}>
@@ -30,7 +56,7 @@ const Dashboard: React.FC = () => {
                 </Typography>
             </Box>
 
-            <Grid container spacing={4} justifyContent="center" alignItems="stretch">
+            <Grid container spacing={4} justifyContent="center" alignItems="stretch" mb={8}>
                 {/* CV Section Card */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Paper
@@ -183,6 +209,66 @@ const Dashboard: React.FC = () => {
                     </Paper>
                 </Grid>
             </Grid>
+
+            {/* Recent CVs Section */}
+            {cvs.length > 0 && (
+                <Box>
+                    <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
+                        Your Recent CVs
+                    </Typography>
+                    <Grid container spacing={3}>
+                        {cvs.map((cv) => (
+                            <Grid size={{ xs: 12, md: 4 }} key={cv.id}>
+                                <Paper sx={{ p: 3, borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                                    <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                                        <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ maxWidth: '70%' }}>
+                                            {cv.fileName}
+                                        </Typography>
+                                        {getStatusChip(cv)}
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+                                        Uploaded: {new Date(cv.createdAt).toLocaleDateString()}
+                                    </Typography>
+                                    <Box display="flex" gap={1}>
+                                        {/* Action Logic */}
+                                        {cv.optimizedPdfUrl ? (
+                                            <Box
+                                                component="button"
+                                                onClick={() => navigate("/cv/result", { state: { cvData: cv } })}
+                                                sx={{
+                                                    border: 0, bgcolor: 'success.main', color: 'white', px: 2, py: 0.5, borderRadius: 2, cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', width: '100%'
+                                                }}
+                                            >
+                                                View Optimized
+                                            </Box>
+                                        ) : cv.analysisResult ? (
+                                            <Box
+                                                component="button"
+                                                onClick={() => navigate("/cv/result", { state: { cvData: cv } })}
+                                                sx={{
+                                                    border: 0, bgcolor: 'primary.main', color: 'white', px: 2, py: 0.5, borderRadius: 2, cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', width: '100%'
+                                                }}
+                                            >
+                                                View Analysis
+                                            </Box>
+                                        ) : (
+                                            <Box
+                                                component="button"
+                                                onClick={() => navigate("/cv/result", { state: { cvData: cv } })}
+                                                sx={{
+                                                    border: 0, bgcolor: 'warning.main', color: 'white', px: 2, py: 0.5, borderRadius: 2, cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', width: '100%'
+                                                }}
+                                            >
+                                                Analyze Now
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Paper>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+            )}
         </Container>
     );
 };

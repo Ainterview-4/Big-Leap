@@ -139,4 +139,8 @@ console.log("ROUTES:", getRoutes(app));
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📘 Swagger UI at → http://localhost:${PORT}/api-docs`);
+  console.log("AI MODEL for CV analysis:", process.env.OPENAI_MODEL);
 });
+
+
+

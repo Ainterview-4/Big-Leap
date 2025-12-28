@@ -12,6 +12,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { uploadCVRequest } from "../../api/cv";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import type { CV } from "../../api/types";
 
 const CVUpload: React.FC = () => {
     const navigate = useNavigate();
@@ -55,13 +56,14 @@ const CVUpload: React.FC = () => {
             setLoading(true);
             // setError(null);
 
-            await uploadCVRequest(file);
+            const response = await uploadCVRequest(file);
 
             toast.success("CV Uploaded Successfully!");
             setSuccessState(true);
             // Navigate to result page
+            // Navigate to result page
             setTimeout(() => {
-                navigate("/cv/result", { state: { filename: file.name } });
+                navigate("/cv/result", { state: { filename: file.name, cvData: ((response as { data?: unknown }).data || response) as CV } });
             }, 1500);
 
         } catch (err: unknown) {

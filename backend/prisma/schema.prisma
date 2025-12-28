@@ -79,6 +79,13 @@ model Cv {
   s3Key       String
   s3Url       String
   textExtract String?
+  structuredData Json?
+  analysisResult Json?
+  atsScore       Int?
+  optimizedData Json?
+  optimizedPdfUrl String?
+  lastJobDescription String?
+  optimizedAt       DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
