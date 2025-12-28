@@ -26,6 +26,9 @@ model Interview {
   role      String?
   company   String?
   level     String?
+  difficulty String? // Easy, Medium, Hard
+  cvId      String?
+  cv        Cv?      @relation(fields: [cvId], references: [id])
   language  String?  @default("tr")
   status    String   @default("DRAFT")
   createdAt DateTime @default(now())
@@ -39,6 +42,7 @@ model InterviewMessage {
   sessionId String
   role      String // "assistant" | "user"
   content   String
+  metadata  Json?
   createdAt DateTime @default(now())
 
   session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -92,6 +96,7 @@ model Cv {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   interviewSessions InterviewSession[]
+  interviews        Interview[]
 
   @@index([userId])
 }

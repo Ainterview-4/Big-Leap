@@ -4,9 +4,11 @@ export interface CreateInterviewParams {
     title: string;
     role?: string;
     level?: string;
-    focusArea?: string; // Not directly used in backend create currently, but good to have
+    focusArea?: string;
     company?: string;
     language?: string;
+    difficulty?: string;
+    cvId?: string;
 }
 
 export interface StartSessionParams {
@@ -19,25 +21,34 @@ export const createInterview = async (params: CreateInterviewParams) => {
     return res.data; // { status: "success", data: interview }
 };
 
-export const startInterviewSession = async (interviewId: string, cvId?: string) => {
-    const res = await api.post(`/interviews/${interviewId}/sessions`, {
-        cvId: cvId ?? null,
-    });
-
-    return res.data; // { status: "success", data: session }
+export const startInterviewSession = async (interviewId: string) => {
+    const res = await api.post(`/interviews/${interviewId}/sessions`);
+    return res.data; // { status: "success", data: { sessionId, question } }
 };
 
-export const answerSession = async (sessionId: string, answer: string) => {
-    const res = await api.post(`/interviews/sessions/${sessionId}/answer`, { answer });
-    return res.data; // { status: "success", data: { sessionId, questionIndex, nextQuestion } }
+export const answerSession = async (
+    sessionId: string,
+    payload: {
+        previous_question_id: string;
+        previous_question: string;
+        previous_answer: string
+    }
+) => {
+    const res = await api.post(`/interviews/sessions/${sessionId}/answer`, payload);
+    return res.data; // { status: "success", data: ... }
 };
 
 export const evaluateSession = async (sessionId: string) => {
-    const res = await api.post(`/interviews/sessions/${sessionId}/evaluate`);
-    return res.data; // { status: "success", data: { score, feedback, ... } }
+    const res = await api.post(`/interviews/sessions/${sessionId}/finalize`);
+    return res.data; // { status: "success", data: { summary: ... } }
 };
 
 export const getSession = async (sessionId: string) => {
     const res = await api.get(`/interviews/sessions/${sessionId}`);
     return res.data; // { status: "success", data: session }
+};
+
+export const listInterviews = async () => {
+    const res = await api.get("/interviews");
+    return res.data; // { status: "success", data: Interview[] }
 };

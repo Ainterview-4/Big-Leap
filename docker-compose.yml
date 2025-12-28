@@ -48,6 +48,9 @@ services:
       # AI Configuration
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4-turbo}
+      # Interview API
+      INTERVIEW_API_KEY: ${INTERVIEW_API_KEY}
+      INTERVIEW_API_URL: ${INTERVIEW_API_URL}
     depends_on:
       postgres:
         condition: service_healthy
