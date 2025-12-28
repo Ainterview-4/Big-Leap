@@ -37,9 +37,17 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/docs ./docs
 COPY package.json ./
 
+# Playwright Setup
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+# Install system dependencies (requires sudo/root)
+RUN npx playwright install-deps chromium
+# Install Chromium binary
+RUN npx playwright install chromium
+
 # Create non-root user for security
 RUN groupadd -r nodejs && useradd -r -g nodejs nodejs && \
-    chown -R nodejs:nodejs /app
+    mkdir -p /opt/playwright && \
+    chown -R nodejs:nodejs /app /opt/playwright
 
 USER nodejs
 
