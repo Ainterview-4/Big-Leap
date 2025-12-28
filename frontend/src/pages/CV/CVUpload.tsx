@@ -55,13 +55,13 @@ const CVUpload: React.FC = () => {
             setLoading(true);
             // setError(null);
 
-            await uploadCVRequest(file);
+            const response = await uploadCVRequest(file);
 
             toast.success("CV Uploaded Successfully!");
             setSuccessState(true);
             // Navigate to result page
             setTimeout(() => {
-                navigate("/cv/result", { state: { filename: file.name } });
+                navigate("/cv/result", { state: { filename: file.name, cvData: (response as any).data || response } });
             }, 1500);
 
         } catch (err: unknown) {

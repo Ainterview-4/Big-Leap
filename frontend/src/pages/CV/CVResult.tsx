@@ -19,6 +19,9 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import DownloadIcon from "@mui/icons-material/Download";
 import WarningIcon from "@mui/icons-material/Warning";
 import { useNavigate, useLocation } from "react-router-dom";
+import { analyzeCVRequest } from "../../api/cv";
+import { toast } from "react-toastify";
+import { CircularProgress } from "@mui/material";
 
 // Simple Circular Progress Component if recharts is not desired
 const ScoreCircle: React.FC<{ score: number }> = ({ score }) => (
@@ -62,12 +65,50 @@ const CVResult: React.FC = () => {
   const theme = useTheme();
   const filename = location.state?.filename || "Uploaded Resume";
 
-  // MOCK DATA - Replace with actual API response later
+  const receivedCv = location.state?.cvData;
+  const structured = receivedCv?.structuredData;
+
+  const [analyzing, setAnalyzing] = React.useState(false);
+  const [analysisResult, setAnalysisResult] = React.useState<any>(null);
+  const [atsScore, setAtsScore] = React.useState<number | null>(null);
+  const analysisAttempted = React.useRef(false);
+
+  React.useEffect(() => {
+    // If we have an ID but no analysis result yet, fetch it
+    // Use ref to prevent double-firing or infinite retry loops
+    if (receivedCv?.id && !analysisResult && !analyzing && !analysisAttempted.current) {
+      analysisAttempted.current = true;
+
+      const fetchAnalysis = async () => {
+        try {
+          setAnalyzing(true);
+          const res = await analyzeCVRequest(receivedCv.id);
+          const data = (res as any).data || res;
+          setAnalysisResult(data.analysis);
+          setAtsScore(data.atsScore);
+        } catch (error) {
+          console.error("Analysis failed", error);
+          toast.error("Could not complete ATS analysis. Please try again later.");
+          // Note: we do NOT reset analysisAttempted.current here, so we don't auto-retry endlessly.
+        } finally {
+          setAnalyzing(false);
+        }
+      };
+      fetchAnalysis();
+    }
+  }, [receivedCv]);
+
+  // Merge data sources: Analysis API > Upload structured data > Mocks
+  const score = atsScore ?? (structured ? 0 : 0);
+  const summary = analysisResult?.issues?.[0]?.fix || structured?.summary || "Analyzing...";
+  const strengths = analysisResult?.strengths || structured?.skills?.technical || [];
+  const missingKeywords = analysisResult?.missingKeywords || [];
+
   const cvData = {
-    score: 75,
-    summary: "A solid profile for a Frontend Developer role. Good experience with React and modern web technologies. However, lacks explicit mentions of testing frameworks and backend familiarity.",
-    missingKeywords: ["Jest", "Cypress", "Docker", "GraphQL", "CI/CD"],
-    strengths: ["React.js", "TypeScript", "UI/UX Design", "Responsive Layouts"],
+    score,
+    summary: analyzing ? "Running deep AI analysis on your resume..." : summary,
+    missingKeywords,
+    strengths,
   };
 
   return (
@@ -113,7 +154,7 @@ const CVResult: React.FC = () => {
                 </Typography>
                 <Box py={2}>
                   {/* Placeholder for a real chart library later */}
-                  <ScoreCircle score={cvData.score} />
+                  {analyzing ? <CircularProgress /> : <ScoreCircle score={cvData.score} />}
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
                   Your resume scores <strong>{cvData.score}/100</strong>. It is formatted well but missing some key technical terms.
@@ -158,7 +199,7 @@ const CVResult: React.FC = () => {
                   Recruiters often look for these specific skills. Consider adding them if you have the experience:
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                  {cvData.missingKeywords.map((keyword) => (
+                  {cvData.missingKeywords.map((keyword: string) => (
                     <Chip
                       key={keyword}
                       label={keyword}
@@ -178,7 +219,7 @@ const CVResult: React.FC = () => {
                   Identified Strengths
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
-                  {cvData.strengths.map((skill) => (
+                  {cvData.strengths.map((skill: string) => (
                     <Chip
                       key={skill}
                       label={skill}
@@ -194,23 +235,63 @@ const CVResult: React.FC = () => {
 
         {/* Action Buttons */}
         <Box display="flex" justifyContent="center" mt={8} gap={3}>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<AutoFixHighIcon />}
-            onClick={() => navigate("/cv/optimize")}
-            sx={{
-              px: 6,
-              py: 1.5,
-              fontSize: "1.1rem",
-              borderRadius: 3,
-              fontWeight: "bold",
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              boxShadow: `0 8px 20px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
-            }}
-          >
-            Optimize My CV
-          </Button>
+          {/* Optimization State Logic */}
+          {receivedCv?.optimizedPdfUrl ? (
+            <Stack direction="row" spacing={3}>
+              <Button
+                variant="contained"
+                size="large"
+                color="success"
+                startIcon={<DownloadIcon />}
+                href={receivedCv.optimizedPdfUrl}
+                target="_blank"
+                sx={{
+                  px: 6,
+                  py: 1.5,
+                  fontSize: "1.1rem",
+                  borderRadius: 3,
+                  fontWeight: "bold",
+                  boxShadow: "0 8px 20px -4px rgba(46, 125, 50, 0.4)",
+                }}
+              >
+                Download Optimized PDF
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="large"
+                color="primary"
+                startIcon={<AutoFixHighIcon />}
+                onClick={() => navigate("/cv/optimize", { state: { cvData: receivedCv, force: true } })}
+                sx={{
+                  px: 4,
+                  borderRadius: 3,
+                  borderWidth: 2,
+                  "&:hover": { borderWidth: 2 },
+                }}
+              >
+                Re-optimize (Force)
+              </Button>
+            </Stack>
+          ) : (
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AutoFixHighIcon />}
+              onClick={() => navigate("/cv/optimize", { state: { cvData: receivedCv } })}
+              sx={{
+                px: 6,
+                py: 1.5,
+                fontSize: "1.1rem",
+                borderRadius: 3,
+                fontWeight: "bold",
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                boxShadow: `0 8px 20px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
+              }}
+            >
+              Optimize My CV
+            </Button>
+          )}
 
           <Button
             variant="outlined"
