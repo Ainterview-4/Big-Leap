@@ -22,7 +22,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { analyzeCVRequest, getCV } from "../../api/cv";
 import { toast } from "react-toastify";
 import type { AnalysisResult, CV } from "../../api/types";
-import { CircularProgress } from "@mui/material";
+
+import ProcessingState from "../../components/ProcessingState";
 
 // Simple Circular Progress Component if recharts is not desired
 const ScoreCircle: React.FC<{ score: number }> = ({ score }) => (
@@ -76,10 +77,9 @@ const CVResult: React.FC = () => {
   const analysisAttempted = React.useRef(false);
 
   // Polling for Structured Data
-  React.useEffect(() => {
-    // If status is not completed, we should poll
-    const needsPolling = cvStart?.status === "PROCESSING" || cvStart?.status === "QUEUED" || (cvStart?.id && !cvStart.structuredData);
+  const needsPolling = cvStart?.status === "PROCESSING" || cvStart?.status === "QUEUED" || (cvStart?.id && !cvStart.structuredData);
 
+  React.useEffect(() => {
     if (needsPolling && cvStart?.id) {
       const interval = setInterval(async () => {
         try {
@@ -102,7 +102,7 @@ const CVResult: React.FC = () => {
 
       return () => clearInterval(interval);
     }
-  }, [cvStart, structured]);
+  }, [cvStart, structured, needsPolling]);
 
   React.useEffect(() => {
     // If we have an ID but no analysis result yet, fetch it
@@ -139,10 +139,12 @@ const CVResult: React.FC = () => {
 
   const cvData = {
     score,
-    summary: analyzing ? "Running deep AI analysis on your resume..." : summary,
+    summary, // No longer need placeholder text here as we show full screen loader
     missingKeywords,
     strengths,
   };
+
+  const isProcessing = needsPolling || analyzing;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6, mb: 8 }}>
@@ -156,192 +158,209 @@ const CVResult: React.FC = () => {
           border: "1px solid",
           borderColor: "divider",
           boxShadow: `0 20px 40px -10px ${alpha(theme.palette.primary.main, 0.05)}`,
+          minHeight: '60vh'
         }}
       >
-        {/* Header Section */}
-        <Box textAlign="center" mb={6}>
-          <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
-          <Typography variant="h3" fontWeight="800" color="text.primary" gutterBottom>
-            Analysis Complete
-          </Typography>
-          <Typography variant="h6" color="text.secondary">
-            Here is how <strong>{filename}</strong> stacks up against industry standards.
-          </Typography>
-        </Box>
+        {isProcessing ? (
+          <ProcessingState
+            title="Analyzing Your Resume"
+            estimatedTime={10000}
+            steps={[
+              "Parsing PDF document structure...",
+              "Extracting professional experience...",
+              "Identifing technical skills...",
+              "Analyzing formatting and layout...",
+              "Comparing against industry standards...",
+              "Calculating ATS Score..."
+            ]}
+          />
+        ) : (
+          <>
+            {/* Header Section */}
+            <Box textAlign="center" mb={6} className="animate-fade-in">
+              <CheckCircleIcon color="success" sx={{ fontSize: 64, mb: 2 }} />
+              <Typography variant="h3" fontWeight="800" color="text.primary" gutterBottom>
+                Analysis Complete
+              </Typography>
+              <Typography variant="h6" color="text.secondary">
+                Here is how <strong>{filename}</strong> stacks up against industry standards.
+              </Typography>
+            </Box>
 
-        <Grid container spacing={4}>
-          {/* LEFT COLUMN: Score & Summary */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Card
-              variant="outlined"
-              sx={{
-                height: "100%",
-                borderRadius: 3,
-                border: "1px solid",
-                borderColor: alpha(theme.palette.divider, 0.6)
-              }}
-            >
-              <CardContent sx={{ textAlign: "center", py: 4 }}>
-                <Typography variant="h6" gutterBottom fontWeight="bold">
-                  ATS Score
-                </Typography>
-                <Box py={2}>
-                  {/* Placeholder for a real chart library later */}
-                  {analyzing ? <CircularProgress /> : <ScoreCircle score={cvData.score} />}
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
-                  Your resume scores <strong>{cvData.score}/100</strong>. It is formatted well but missing some key technical terms.
-                </Typography>
-                <Divider sx={{ my: 3 }} />
-                <Button
+            <Grid container spacing={4} className="animate-fade-in">
+              {/* LEFT COLUMN: Score & Summary */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Card
                   variant="outlined"
-                  startIcon={<DownloadIcon />}
-                  fullWidth
-                  sx={{ borderRadius: 2 }}
+                  sx={{
+                    height: "100%",
+                    borderRadius: 3,
+                    border: "1px solid",
+                    borderColor: alpha(theme.palette.divider, 0.6)
+                  }}
                 >
-                  Download Report
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* RIGHT COLUMN: Detailed Analysis */}
-          <Grid size={{ xs: 12, md: 8 }}>
-            <Stack spacing={3}>
-              {/* Executive Summary */}
-              <Box>
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                  Executive Summary
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                  {cvData.summary}
-                </Typography>
-              </Box>
-
-              <Divider />
-
-              {/* Missing Keywords */}
-              <Box>
-                <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <WarningIcon color="warning" />
-                  <Typography variant="h6" fontWeight="bold">
-                    Missing Keywords
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Recruiters often look for these specific skills. Consider adding them if you have the experience:
-                </Typography>
-                <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                  {cvData.missingKeywords.map((keyword: string) => (
-                    <Chip
-                      key={keyword}
-                      label={keyword}
-                      color="warning"
+                  <CardContent sx={{ textAlign: "center", py: 4 }}>
+                    <Typography variant="h6" gutterBottom fontWeight="bold">
+                      ATS Score
+                    </Typography>
+                    <Box py={2}>
+                      <ScoreCircle score={cvData.score} />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
+                      Your resume scores <strong>{cvData.score}/100</strong>. It is formatted well but missing some key technical terms.
+                    </Typography>
+                    <Divider sx={{ my: 3 }} />
+                    <Button
                       variant="outlined"
-                      sx={{ fontWeight: "medium" }}
-                    />
-                  ))}
-                </Box>
-              </Box>
+                      startIcon={<DownloadIcon />}
+                      fullWidth
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Download Report
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-              <Divider />
+              {/* RIGHT COLUMN: Detailed Analysis */}
+              <Grid size={{ xs: 12, md: 8 }}>
+                <Stack spacing={3}>
+                  {/* Executive Summary */}
+                  <Box>
+                    <Typography variant="h5" fontWeight="bold" gutterBottom>
+                      Executive Summary
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+                      {cvData.summary}
+                    </Typography>
+                  </Box>
 
-              {/* Strengths */}
-              <Box>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Identified Strengths
-                </Typography>
-                <Box display="flex" flexWrap="wrap" gap={1}>
-                  {cvData.strengths.map((skill: string) => (
-                    <Chip
-                      key={skill}
-                      label={skill}
-                      color="success"
-                      sx={{ fontWeight: "medium", bgcolor: "success.light", color: "success.dark" }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            </Stack>
-          </Grid>
-        </Grid>
+                  <Divider />
 
-        {/* Action Buttons */}
-        <Box display="flex" justifyContent="center" mt={8} gap={3}>
-          {/* Optimization State Logic */}
-          {cvStart?.optimizedPdfUrl ? (
-            <Stack direction="row" spacing={3}>
+                  {/* Missing Keywords */}
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <WarningIcon color="warning" />
+                      <Typography variant="h6" fontWeight="bold">
+                        Missing Keywords
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Recruiters often look for these specific skills. Consider adding them if you have the experience:
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                      {cvData.missingKeywords.map((keyword: string) => (
+                        <Chip
+                          key={keyword}
+                          label={keyword}
+                          color="warning"
+                          variant="outlined"
+                          sx={{ fontWeight: "medium" }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+
+                  <Divider />
+
+                  {/* Strengths */}
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Identified Strengths
+                    </Typography>
+                    <Box display="flex" flexWrap="wrap" gap={1}>
+                      {cvData.strengths.map((skill: string) => (
+                        <Chip
+                          key={skill}
+                          label={skill}
+                          color="success"
+                          sx={{ fontWeight: "medium", bgcolor: "success.light", color: "success.dark" }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                </Stack>
+              </Grid>
+            </Grid>
+
+            {/* Action Buttons */}
+            <Box display="flex" justifyContent="center" mt={8} gap={3} className="animate-fade-in">
+              {/* Optimization State Logic */}
+              {cvStart?.optimizedPdfUrl ? (
+                <Stack direction="row" spacing={3}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    color="success"
+                    startIcon={<DownloadIcon />}
+                    href={cvStart.optimizedPdfUrl}
+                    target="_blank"
+                    sx={{
+                      px: 6,
+                      py: 1.5,
+                      fontSize: "1.1rem",
+                      borderRadius: 3,
+                      fontWeight: "bold",
+                      boxShadow: "0 8px 20px -4px rgba(46, 125, 50, 0.4)",
+                    }}
+                  >
+                    Download Optimized PDF
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    color="primary"
+                    startIcon={<AutoFixHighIcon />}
+                    onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart, force: true } })}
+                    sx={{
+                      px: 4,
+                      borderRadius: 3,
+                      borderWidth: 2,
+                      "&:hover": { borderWidth: 2 },
+                    }}
+                  >
+                    Re-optimize (Force)
+                  </Button>
+                </Stack>
+              ) : (
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<AutoFixHighIcon />}
+                  onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart } })}
+                  sx={{
+                    px: 6,
+                    py: 1.5,
+                    fontSize: "1.1rem",
+                    borderRadius: 3,
+                    fontWeight: "bold",
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    boxShadow: `0 8px 20px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
+                  }}
+                >
+                  Optimize My CV
+                </Button>
+              )}
+
               <Button
-                variant="contained"
+                variant="outlined"
                 size="large"
-                color="success"
-                startIcon={<DownloadIcon />}
-                href={cvStart.optimizedPdfUrl}
-                target="_blank"
+                onClick={() => navigate("/interview/start")}
                 sx={{
                   px: 6,
                   py: 1.5,
                   fontSize: "1.1rem",
                   borderRadius: 3,
-                  fontWeight: "bold",
-                  boxShadow: "0 8px 20px -4px rgba(46, 125, 50, 0.4)",
-                }}
-              >
-                Download Optimized PDF
-              </Button>
-
-              <Button
-                variant="outlined"
-                size="large"
-                color="primary"
-                startIcon={<AutoFixHighIcon />}
-                onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart, force: true } })}
-                sx={{
-                  px: 4,
-                  borderRadius: 3,
                   borderWidth: 2,
                   "&:hover": { borderWidth: 2 },
                 }}
               >
-                Re-optimize (Force)
+                Practice Interview
               </Button>
-            </Stack>
-          ) : (
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<AutoFixHighIcon />}
-              onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart } })}
-              sx={{
-                px: 6,
-                py: 1.5,
-                fontSize: "1.1rem",
-                borderRadius: 3,
-                fontWeight: "bold",
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                boxShadow: `0 8px 20px -4px ${alpha(theme.palette.primary.main, 0.4)}`,
-              }}
-            >
-              Optimize My CV
-            </Button>
-          )}
-
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={() => navigate("/interview/start")}
-            sx={{
-              px: 6,
-              py: 1.5,
-              fontSize: "1.1rem",
-              borderRadius: 3,
-              borderWidth: 2,
-              "&:hover": { borderWidth: 2 },
-            }}
-          >
-            Practice Interview
-          </Button>
-        </Box>
+            </Box>
+          </>
+        )}
       </Paper>
     </Container>
   );

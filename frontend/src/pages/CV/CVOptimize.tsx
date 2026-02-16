@@ -14,7 +14,6 @@ import {
     ListItemText,
     useTheme,
     alpha,
-    LinearProgress,
     TextField,
     Collapse,
     IconButton,
@@ -33,6 +32,8 @@ import { optimizeCVRequest } from "../../api/cv";
 import { toast } from "react-toastify";
 import type { CV } from "../../api/types";
 
+import ProcessingState from "../../components/ProcessingState";
+
 const CVOptimize: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -47,8 +48,6 @@ const CVOptimize: React.FC = () => {
     const [jobDescription, setJobDescription] = useState("");
     const [showJdInput, setShowJdInput] = useState(false);
 
-    // State to store result from API
-    const [resultScore, setResultScore] = useState<number | null>(null);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
     // Get CV ID from navigation state
@@ -74,7 +73,6 @@ const CVOptimize: React.FC = () => {
             console.log("Skipping new optimization - using existing.");
             setOptimized(true);
             setPdfUrl(cvData.optimizedPdfUrl);
-            setResultScore(98); // Assume perfect optimization
         }
     }, [cvData, location.state]);
 
@@ -98,7 +96,6 @@ const CVOptimize: React.FC = () => {
             setOptimized(true);
             setIsRetry(false); // Reset retry state
             setPdfUrl(data.optimizedPdfUrl);
-            setResultScore(98); // Hardcode high score for "optimized" state
             toast.success("Resume optimized successfully!");
         } catch (error) {
             console.error("Optimization failed", error);
@@ -114,6 +111,7 @@ const CVOptimize: React.FC = () => {
                 <Button
                     startIcon={<ArrowBackIcon />}
                     onClick={() => navigate("/cv/result")}
+                    disabled={optimizing}
                     sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
                 >
                     Back to Analysis
@@ -137,7 +135,21 @@ const CVOptimize: React.FC = () => {
                     alignItems: 'center'
                 }}
             >
-                {!optimized ? (
+                {optimizing ? (
+                    <ProcessingState
+                        title="Optimizing Your Resume"
+                        estimatedTime={15000}
+                        steps={[
+                            "Analyzing your resume weak points...",
+                            ...(jobDescription ? ["Tailoring content to job description..."] : ["Identifying industry keywords..."]),
+                            "Enhancing action verbs...",
+                            "Optimizing keyword density...",
+                            "Refining executive summary...",
+                            "Reformatting for better readability...",
+                            "Generating final PDF..."
+                        ]}
+                    />
+                ) : !optimized ? (
                     <Box width="100%" maxWidth="md">
                         <Box textAlign="center" mb={6}>
                             <Typography variant="h3" fontWeight="800" gutterBottom sx={{
@@ -154,7 +166,7 @@ const CVOptimize: React.FC = () => {
                         </Box>
 
                         <Grid container spacing={4} alignItems="stretch">
-                            <Grid size={{ xs: 12, md: 7 }}>
+                            <Grid size={{ xs: 12, md: currentScore > 0 ? 7 : 12 }}>
                                 <Card variant="outlined" sx={{ height: '100%', borderRadius: 4, bgcolor: alpha(theme.palette.background.paper, 0.6) }}>
                                     <CardContent sx={{ p: 4 }}>
                                         <Typography variant="h6" fontWeight="bold" gutterBottom display="flex" alignItems="center">
@@ -183,34 +195,36 @@ const CVOptimize: React.FC = () => {
                                 </Card>
                             </Grid>
 
-                            <Grid size={{ xs: 12, md: 5 }}>
-                                <Card variant="outlined" sx={{
-                                    height: '100%',
-                                    borderRadius: 4,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    position: 'relative',
-                                    overflow: 'hidden'
-                                }}>
-                                    <Box sx={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        height: '6px',
-                                        bgcolor: currentScore > 70 ? 'success.main' : 'warning.main'
-                                    }} />
-                                    <Box textAlign="center" p={3}>
-                                        <Typography variant="h2" fontWeight="800" color={currentScore > 70 ? 'success.main' : 'warning.main'}>
-                                            {currentScore}
-                                        </Typography>
-                                        <Typography variant="overline" color="text.secondary" letterSpacing={2}>
-                                            Current Score
-                                        </Typography>
-                                    </Box>
-                                </Card>
-                            </Grid>
+                            {currentScore > 0 && (
+                                <Grid size={{ xs: 12, md: 5 }}>
+                                    <Card variant="outlined" sx={{
+                                        height: '100%',
+                                        borderRadius: 4,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: '6px',
+                                            bgcolor: currentScore > 70 ? 'success.main' : 'warning.main'
+                                        }} />
+                                        <Box textAlign="center" p={3}>
+                                            <Typography variant="h2" fontWeight="800" color={currentScore > 70 ? 'success.main' : 'warning.main'}>
+                                                {currentScore}
+                                            </Typography>
+                                            <Typography variant="overline" color="text.secondary" letterSpacing={2}>
+                                                Current Score
+                                            </Typography>
+                                        </Box>
+                                    </Card>
+                                </Grid>
+                            )}
                         </Grid>
 
                         {/* Job Description Input Section */}
@@ -246,38 +260,29 @@ const CVOptimize: React.FC = () => {
                         </Box>
 
                         <Box mt={6} textAlign="center">
-                            {optimizing ? (
-                                <Box sx={{ width: '100%', maxWidth: 400, mx: 'auto' }}>
-                                    <LinearProgress sx={{ height: 10, borderRadius: 5, mb: 2 }} />
-                                    <Typography variant="body2" color="text.secondary" className="animate-pulse">
-                                        {jobDescription ? "Tailoring resume to job description..." : "Rewriting content with AI..."}
-                                    </Typography>
-                                </Box>
-                            ) : (
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    onClick={handleOptimize}
-                                    startIcon={<AutoFixHighIcon />}
-                                    sx={{
-                                        px: 8,
-                                        py: 2,
-                                        borderRadius: 50,
-                                        fontSize: "1.2rem",
-                                        fontWeight: "bold",
-                                        textTransform: "none",
-                                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                        boxShadow: "0 10px 30px -10px rgba(33, 150, 243, 0.5)",
-                                        transition: "transform 0.2s",
-                                        "&:hover": {
-                                            transform: "scale(1.02)",
-                                            boxShadow: "0 15px 40px -10px rgba(33, 150, 243, 0.7)",
-                                        }
-                                    }}
-                                >
-                                    Fix My Resume Now
-                                </Button>
-                            )}
+                            <Button
+                                variant="contained"
+                                size="large"
+                                onClick={handleOptimize}
+                                startIcon={<AutoFixHighIcon />}
+                                sx={{
+                                    px: 8,
+                                    py: 2,
+                                    borderRadius: 50,
+                                    fontSize: "1.2rem",
+                                    fontWeight: "bold",
+                                    textTransform: "none",
+                                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                    boxShadow: "0 10px 30px -10px rgba(33, 150, 243, 0.5)",
+                                    transition: "transform 0.2s",
+                                    "&:hover": {
+                                        transform: "scale(1.02)",
+                                        boxShadow: "0 15px 40px -10px rgba(33, 150, 243, 0.7)",
+                                    }
+                                }}
+                            >
+                                Fix My Resume Now
+                            </Button>
                         </Box>
                     </Box>
                 ) : (
@@ -299,9 +304,7 @@ const CVOptimize: React.FC = () => {
                             Optimization Complete!
                         </Typography>
 
-                        <Typography variant="h5" color="success.main" sx={{ mb: 6, fontWeight: 'medium' }}>
-                            Your resume score has skyrocketed to <strong>{resultScore ?? 98}/100</strong>
-                        </Typography>
+
 
                         <Grid container spacing={4} justifyContent="center" mb={6}>
                             <Grid size={{ xs: 12, md: 8 }}>
