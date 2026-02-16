@@ -19,7 +19,7 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import DownloadIcon from "@mui/icons-material/Download";
 import WarningIcon from "@mui/icons-material/Warning";
 import { useNavigate, useLocation } from "react-router-dom";
-import { analyzeCVRequest } from "../../api/cv";
+import { analyzeCVRequest, getCV } from "../../api/cv";
 import { toast } from "react-toastify";
 import type { AnalysisResult, CV } from "../../api/types";
 import { CircularProgress } from "@mui/material";
@@ -67,37 +67,69 @@ const CVResult: React.FC = () => {
   const filename = location.state?.filename || "Uploaded Resume";
 
   const receivedCv: CV | undefined = (location.state as { cvData?: CV })?.cvData;
-  const structured = receivedCv?.structuredData;
+  const [cvStart, setCvStart] = React.useState<CV | undefined>(receivedCv);
+  const structured = cvStart?.structuredData;
 
   const [analyzing, setAnalyzing] = React.useState(false);
   const [analysisResult, setAnalysisResult] = React.useState<AnalysisResult | null>(null);
   const [atsScore, setAtsScore] = React.useState<number | null>(null);
   const analysisAttempted = React.useRef(false);
 
+  // Polling for Structured Data
+  React.useEffect(() => {
+    // If status is not completed, we should poll
+    const needsPolling = cvStart?.status === "PROCESSING" || cvStart?.status === "QUEUED" || (cvStart?.id && !cvStart.structuredData);
+
+    if (needsPolling && cvStart?.id) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await getCV(cvStart.id);
+          // Safely handle AxiosResponse or direct data
+          const updatedCv = ((res as any).data || res) as CV;
+
+          if (updatedCv.status === "COMPLETED" || updatedCv.structuredData) {
+            setCvStart(updatedCv);
+            clearInterval(interval);
+            toast.success("AI Analysis Completed!");
+          } else if (updatedCv.status === "FAILED") {
+            clearInterval(interval);
+            toast.error("AI Analysis Failed. Please try uploading again.");
+          }
+        } catch (error) {
+          console.error("Polling failed", error);
+        }
+      }, 2000); // Poll every 2 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [cvStart, structured]);
+
   React.useEffect(() => {
     // If we have an ID but no analysis result yet, fetch it
     // Use ref to prevent double-firing or infinite retry loops
-    if (receivedCv?.id && !analysisResult && !analyzing && !analysisAttempted.current) {
+    // Wait until status is COMPLETED or structuredData is available before analyzing
+    const readyToAnalyze = cvStart?.status === "COMPLETED" || !!cvStart?.structuredData;
+
+    if (cvStart?.id && readyToAnalyze && !analysisResult && !analyzing && !analysisAttempted.current) {
       analysisAttempted.current = true;
 
       const fetchAnalysis = async () => {
         try {
           setAnalyzing(true);
-          const res = await analyzeCVRequest(receivedCv.id);
+          const res = await analyzeCVRequest(cvStart.id);
           const data = ((res as { data?: unknown }).data || res) as { analysis: AnalysisResult; atsScore: number };
           setAnalysisResult(data.analysis);
           setAtsScore(data.atsScore);
         } catch (error) {
           console.error("Analysis failed", error);
           toast.error("Could not complete ATS analysis. Please try again later.");
-          // Note: we do NOT reset analysisAttempted.current here, so we don't auto-retry endlessly.
         } finally {
           setAnalyzing(false);
         }
       };
       fetchAnalysis();
     }
-  }, [receivedCv, analysisResult, analyzing]);
+  }, [cvStart, analysisResult, analyzing]);
 
   // Merge data sources: Analysis API > Upload structured data > Mocks
   const score = atsScore ?? (structured ? 0 : 0);
@@ -237,14 +269,14 @@ const CVResult: React.FC = () => {
         {/* Action Buttons */}
         <Box display="flex" justifyContent="center" mt={8} gap={3}>
           {/* Optimization State Logic */}
-          {receivedCv?.optimizedPdfUrl ? (
+          {cvStart?.optimizedPdfUrl ? (
             <Stack direction="row" spacing={3}>
               <Button
                 variant="contained"
                 size="large"
                 color="success"
                 startIcon={<DownloadIcon />}
-                href={receivedCv.optimizedPdfUrl}
+                href={cvStart.optimizedPdfUrl}
                 target="_blank"
                 sx={{
                   px: 6,
@@ -263,7 +295,7 @@ const CVResult: React.FC = () => {
                 size="large"
                 color="primary"
                 startIcon={<AutoFixHighIcon />}
-                onClick={() => navigate("/cv/optimize", { state: { cvData: receivedCv, force: true } })}
+                onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart, force: true } })}
                 sx={{
                   px: 4,
                   borderRadius: 3,
@@ -279,7 +311,7 @@ const CVResult: React.FC = () => {
               variant="contained"
               size="large"
               startIcon={<AutoFixHighIcon />}
-              onClick={() => navigate("/cv/optimize", { state: { cvData: receivedCv } })}
+              onClick={() => navigate("/cv/optimize", { state: { cvData: cvStart } })}
               sx={{
                 px: 6,
                 py: 1.5,

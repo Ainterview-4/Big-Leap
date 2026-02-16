@@ -29,6 +29,7 @@ export interface CV {
     optimizedPdfUrl?: string | null;
     atsScore?: number | null;
     structuredData?: StructuredData | null;
+    status: "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
 }
 
 export interface InterviewMessage {

@@ -33,3 +33,7 @@ export const optimizeCVRequest = (data: { cvId: string; jobDescription?: string;
 export const listMyCVs = () => {
     return api.get<CV[]>("/cv");
 };
+
+export const getCV = (id: string) => {
+    return api.get<CV>(`/cv/${id}`);
+};
