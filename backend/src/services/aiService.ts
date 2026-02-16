@@ -5,7 +5,7 @@ const MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 export async function callAIJson<T>(args: {
     system: string;
     user: string;
-}): Promise<T> {
+}, modelOverride?: string): Promise<T> {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
         throw new Error("OPENAI_API_KEY is not configured.");
@@ -14,7 +14,7 @@ export async function callAIJson<T>(args: {
     const openai = new OpenAI({ apiKey });
 
     const res = await openai.chat.completions.create({
-        model: MODEL,
+        model: modelOverride || MODEL,
         messages: [
             { role: "system", content: args.system },
             { role: "user", content: args.user },

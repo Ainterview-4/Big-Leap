@@ -61,7 +61,7 @@ model InterviewSession {
   cvId        String?
   cv          Cv?      @relation(fields: [cvId], references: [id])
 
-  status      String   @default("STARTED")
+  status      String   @default("COMPLETED") // QUEUED, PROCESSING, COMPLETED, FAILED.
   score       Int?
   startedAt   DateTime @default(now())
   endedAt     DateTime?
@@ -86,6 +86,7 @@ model Cv {
   structuredData Json?
   analysisResult Json?
   atsScore       Int?
+  status         String   @default("QUEUED") // QUEUED, PROCESSING, COMPLETED, FAILED
   optimizedData Json?
   optimizedPdfUrl String?
   lastJobDescription String?

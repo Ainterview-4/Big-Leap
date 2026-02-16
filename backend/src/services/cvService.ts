@@ -58,6 +58,7 @@ export const processCvUpload = async (userId: string, file: Express.Multer.File)
 
     // 3. Create CV Record
     console.time("3. DB Create");
+    // Cast to any to bypass Docker build type mismatch (Prisma Client cache issue)
     const cv = await prisma.cv.create({
         data: {
             userId,
@@ -67,7 +68,8 @@ export const processCvUpload = async (userId: string, file: Express.Multer.File)
             s3Key: key,
             s3Url: url,
             textExtract,
-        },
+            status: "PROCESSING",
+        } as any,
     });
     console.timeEnd("3. DB Create");
 
@@ -78,19 +80,27 @@ export const processCvUpload = async (userId: string, file: Express.Multer.File)
         (async () => {
             console.time("Background AI Extraction");
             try {
+                // Use the faster model for extraction
                 const prompt = buildExtractStructuredDataPrompt(textExtract!);
-                const structuredData = await callAIJson(prompt);
+                const structuredData = await callAIJson(prompt, "gpt-4o-mini");
 
                 await prisma.cv.update({
                     where: { id: cv.id },
-                    data: { structuredData: structuredData as any },
+                    data: {
+                        structuredData: structuredData as any,
+                        status: "COMPLETED"
+                    } as any,
                 });
                 console.log(`✅ Background AI analysis completed for CV ${cv.id}`);
 
             } catch (error) {
                 console.timeEnd("Background AI Extraction");
                 console.error("❌ Background AI Extraction Failed:", error);
-                // We can't throw here to the controller, maybe update a status field in DB later
+
+                await prisma.cv.update({
+                    where: { id: cv.id },
+                    data: { status: "FAILED" } as any,
+                });
             }
             console.timeEnd("Background AI Extraction");
         })();
