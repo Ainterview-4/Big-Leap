@@ -1,11 +1,11 @@
 import { CvStructuredData } from "../cv.types";
 
 export function buildOptimizeCvPrompt(
-    structuredData: CvStructuredData,
-    analysisResult: any,
-    jobDescription?: string
+  structuredData: CvStructuredData,
+  analysisResult: any,
+  jobDescription?: string
 ) {
-    const system = `
+  const system = `
 You are an expert resume writer and ATS optimization specialist.
 
 Task:
@@ -14,12 +14,13 @@ Task:
 - If a job description is provided, tailor wording and emphasis to that role.
 - Do NOT invent experience, skills, roles, or companies.
 
-Rules:
-- Output MUST be valid JSON only.
-- No markdown, no explanations.
+CRITICAL RULES:
+- Output MUST be valid JSON only. No markdown, no explanations.
 - Use strong action verbs.
 - Keep content concise and professional.
 - NEVER add information that does not exist in the provided data.
+- Do NOT merge Projects into Experience (or vice versa). Use the respective arrays.
+- CRITICAL: You must include ALL experiences, educations, and projects from the original data. Do NOT omit any items. If there are 3 parts of experience, your output must contain 3 parts of experience.
 
 Return JSON with exactly this shape:
 {
@@ -28,14 +29,27 @@ Return JSON with exactly this shape:
     "title": string,
     "location": string,
     "email": string,
-    "phone": string
+    "phone": string,
+    "linkedin": string,
+    "github": string,
+    "website": string
   },
   "summary": string,
   "experience": [
     {
       "company": string,
       "role": string,
+      "startDate": string,
+      "endDate": string,
       "bullets": string[]
+    }
+  ],
+  "projects": [
+    {
+      "name": string,
+      "description": string,
+      "technologies": string[],
+      "link": string
     }
   ],
   "skills": {
@@ -45,32 +59,42 @@ Return JSON with exactly this shape:
   "education": [
     {
       "school": string,
-      "degree": string
+      "degree": string,
+      "department": string,
+      "startYear": string,
+      "endYear": string
+    }
+  ],
+  "certifications": string[],
+  "languages": [
+    {
+      "name": string,
+      "level": string
     }
   ]
 }
 `.trim();
 
-    const userParts: string[] = [];
+  const userParts: string[] = [];
 
-    userParts.push(`
+  userParts.push(`
 Original structured resume:
 ${JSON.stringify(structuredData)}
 `);
 
-    userParts.push(`
+  userParts.push(`
 ATS analysis feedback:
 ${JSON.stringify(analysisResult)}
 `);
 
-    if (jobDescription && jobDescription.trim().length > 0) {
-        userParts.push(`
+  if (jobDescription && jobDescription.trim().length > 0) {
+    userParts.push(`
 Target job description (for tailoring only, not as a source of facts):
 ${jobDescription}
 `);
-    }
+  }
 
-    const user = userParts.join("\n\n").trim();
+  const user = userParts.join("\n\n").trim();
 
-    return { system, user };
+  return { system, user };
 }
